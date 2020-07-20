@@ -35,10 +35,16 @@ def graph_to_graph_idx(g: nx.Graph):
     graph2idx = nx.Graph()
 
     for u, v in g.edges():
-
         graph2idx.add_edge(node2idx[u], node2idx[v])
 
     return graph2idx, idx2node
+
+
+def idx_to_graph(g: nx.Graph, idx2node: {}):
+    original_graph = nx.Graph()
+    for u, v in g.edges():
+        original_graph.add_edge(idx2node[u], idx2node[v])
+    return original_graph
 
 
 def draw_graph(g: nx.Graph, seed=6, pos=None, idx2node=None):

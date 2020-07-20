@@ -127,3 +127,5 @@ data/*
 #!models/
 models/*
 !models/synthetic/
+
+processed_data/*

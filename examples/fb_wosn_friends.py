@@ -1,9 +1,13 @@
+import os
+from os import listdir
+from os.path import join, exists, isfile
 from time import time
 import numpy as np
 import networkx as nx
+import pandas as pd
 import warnings
 
-from src.data_preprocessing.data_preprocessing import read_dynamic_graph
+from src.data_preprocessing.data_preprocessing import read_dynamic_graph, get_graph_from_file
 
 warnings.filterwarnings("ignore")
 
@@ -12,11 +16,50 @@ from src.utils.graph_util import graph_to_graph_idx, print_graph_stats, draw_gra
 from src.utils.link_prediction import preprocessing_graph_for_link_prediction, run_link_pred_evaluate, run_predict, \
     top_k_prediction_edges
 
+
+def save_graphs_df(graphs_df: [], folder):
+    g_df: pd.DataFrame
+    if not exists(folder):
+        os.makedirs(folder)
+    for i, g_df in enumerate(graphs_df):
+        g_df.to_csv(join(folder, f"graph_{i}.csv"), index=False)
+
+
+def save_processed_graphs(graphs: [], folder):
+    g: nx.Graph
+    if not exists(folder):
+        os.makedirs(folder)
+    for i, g in enumerate(graphs):
+        nx.write_edgelist(g, f'{folder}/graph{i}.edgelist', data=False)
+
+
+def load_graphs_df(folder):
+    files = [f for f in listdir(folder) if isfile(join(folder, f))]
+    graphs_df = []
+    for f in sorted(files):
+        graphs_df.append(
+            pd.read_csv(join(folder, f))
+        )
+    return graphs_df
+
+
+def load_processed_graphs(folder):
+    files = [f for f in listdir(folder) if isfile(join(folder, f))]
+    graphs = []
+    for f in sorted(files):
+        graphs.append(
+            get_graph_from_file(join(folder, f))
+        )
+    return graphs
+
+
 if __name__ == "__main__":
     # ------------ Params -----------
     folder_data = "../data/as-733"
+    processed_data_folder = "../processed_data"
     weight_model_folder = "../models/synthetic"
     load_model = False
+    load_processed_data = True
     epochs = 20
     skip_print = 5
     batch_size = 256
@@ -29,11 +72,16 @@ if __name__ == "__main__":
 
     # ====================== Settings =================
     np.random.seed(seed=seed)
+    if not exists(processed_data_folder):
+        os.makedirs(processed_data_folder)
+
+    if not exists(weight_model_folder):
+        os.makedirs(weight_model_folder)
 
     # =============================================
     # original_graphs = read_dynamic_graph(folder_path=folder_data, limit=2)
-    g1 = nx.gnm_random_graph(n=100, m=500, seed=6)
-    original_graphs = [g1, g1]
+    g1 = nx.gnm_random_graph(n=20, m=60, seed=6)
+    original_graphs = [g1]
 
     print("Number graphs: ", len(original_graphs))
     print("Origin graphs:")
@@ -47,24 +95,33 @@ if __name__ == "__main__":
         graph2idx, idx2node = graph_to_graph_idx(g)
         graphs2idx.append(graph2idx)
         idx2nodes.append(idx2node)
-
     graphs = graphs2idx
+
     # draw_graph(g1, pos=nx.spring_layout(graphs[0], seed=6))
-    # draw_graph(graphs[0], idx2node=idx2nodes[0])
+    draw_graph(graphs[0], idx2node=idx2nodes[0])
 
-    G_dfs = []
-    G_partial_list = []
+    if load_processed_data:
+        print("Load processed data from disk...")
+        G_dfs = load_graphs_df(folder=join(processed_data_folder, "dfs"))
+        G_partial_list = load_processed_graphs(folder=join(processed_data_folder, "graphs"))
+    else:
+        print("\n[ALL] Pre-processing graph for link prediction...")
+        start_time = time()
+        G_dfs = []
+        G_partial_list = []
+        for idx, g in enumerate(graphs):
+            print(f"==== Graph {idx}: ")
+            g_df, g_partial = preprocessing_graph_for_link_prediction(G=g, k_length=2,
+                                                                      drop_node_percent=drop_node_percent)
+            G_dfs.append(g_df)
+            G_partial_list.append(g_partial)
+        # Save processed data
+        # NOTE: save idx graph. Not original graph
+        save_graphs_df(G_dfs, folder=join(processed_data_folder, "dfs"))
+        save_processed_graphs(G_partial_list, folder=join(processed_data_folder, "graphs"))
+        print(f"[ALL] Processed in {round(time() - start_time, 2)}s\n")
 
-    print("\n[ALL] Pre-processing graph for link prediction...")
-    start_time = time()
-    for idx, g in enumerate(graphs):
-        print(f"==== Graph {idx}: ")
-        g_df, g_partial = preprocessing_graph_for_link_prediction(G=g, k_length=2, drop_node_percent=drop_node_percent)
-        G_dfs.append(g_df)
-        G_partial_list.append(g_partial)
-    print(f"[ALL] Processed in {round(time() - start_time, 2)}s\n")
-
-    # draw_graph(g=G_partial_list[0], pos=nx.spring_layout(graphs[0], seed=6))
+    draw_graph(g=G_partial_list[0], pos=nx.spring_layout(graphs[0], seed=6))
 
     print("After processing for link prediction graphs:")
     for i, g in enumerate(G_partial_list):
