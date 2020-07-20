@@ -1,14 +1,12 @@
+from time import time
 import networkx as nx
 import numpy as np
 from sklearn.metrics import roc_auc_score, roc_curve
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
-import lightgbm as lgbm
+import lightgbm
 import pandas as pd
 import matplotlib.pyplot as plt
-
-
-# from static_ge import StaticGE
 
 
 def get_unconnected_pairs(G: nx.Graph):
@@ -67,8 +65,8 @@ def run_evaluate(data, embedding, alg=None, num_boost_round=10000, early_stoppin
         stratify=data['link']
     )
 
-    train_data = lgbm.Dataset(X_train, y_train)
-    test_data = lgbm.Dataset(X_test, y_test)
+    train_data = lightgbm.Dataset(X_train, y_train)
+    test_data = lightgbm.Dataset(X_test, y_test)
 
     # define parameters
     parameters = {
@@ -84,13 +82,13 @@ def run_evaluate(data, embedding, alg=None, num_boost_round=10000, early_stoppin
     }
 
     # train lightGBM model
-    model = lgbm.train(parameters,
-                       train_data,
-                       valid_sets=test_data,
-                       num_boost_round=num_boost_round,
-                       early_stopping_rounds=early_stopping_rounds,
-                       verbose_eval=10,
-                       )
+    model = lightgbm.train(parameters,
+                           train_data,
+                           valid_sets=test_data,
+                           num_boost_round=num_boost_round,
+                           early_stopping_rounds=early_stopping_rounds,
+                           verbose_eval=10,
+                           )
 
     y_pred = model.predict(X_test)
     print(f"#----\nROC AUC Score: {round(roc_auc_score(y_test, y_pred, average=None), 2)}")
@@ -133,12 +131,16 @@ def run_predict(data, embedding, model):
 
 
 # https://www.analyticsvidhya.com/blog/2020/01/link-prediction-how-to-predict-your-future-connections-on-facebook/
-def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2):
+def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_percent=1):
+    print("Pre-processing graph for link prediction...")
+    start_time = time()
+
     node_list_1 = [u for u, _ in G.edges]
     node_list_2 = [v for _, v in G.edges]
     graph_df = pd.DataFrame({'node_1': node_list_1, 'node_2': node_list_2})
     # all_unconnected_pairs = get_unconnected_pairs(G)
     all_unconnected_pairs = get_unconnected_pairs_(G, k_length=k_length)
+
     node_1_unlinked = [i[0] for i in all_unconnected_pairs]
     node_2_unlinked = [i[1] for i in all_unconnected_pairs]
     data = pd.DataFrame({'node_1': node_1_unlinked,
@@ -146,17 +148,22 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2):
     # add target variable 'link'
     data['link'] = 0
 
-    initial_node_count = len(G.nodes)
+    initial_nodes_len = G.number_of_nodes()
+    initial_edges_len = G.number_of_edges()
     graph_df_temp = graph_df.copy()
     # empty list to store removable links
     omissible_links_index = []
+    dropped_node_count = 0
     for i in tqdm(graph_df.index.values):
+        if (dropped_node_count / initial_edges_len) >= drop_node_percent:
+            break
         # remove a node pair and build a new graph
         G_temp = nx.from_pandas_edgelist(graph_df_temp.drop(index=i), "node_1", "node_2", create_using=nx.Graph())
-        # check there is no spliting of graph and number of nodes is same
-        if (nx.number_connected_components(G_temp) == 1) and (len(G_temp.nodes) == initial_node_count):
+        # check there is no splitting of graph and number of nodes is same
+        if (nx.number_connected_components(G_temp) == 1) and (len(G_temp.nodes) == initial_nodes_len):
             omissible_links_index.append(i)
             graph_df_temp = graph_df_temp.drop(index=i)
+            dropped_node_count += 1
 
     # create dataframe of removable edges
     removed_edge_graph_df = graph_df.loc[omissible_links_index]
@@ -171,6 +178,8 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2):
 
     # build graph
     G_partial = nx.from_pandas_edgelist(graph_df_partial, "node_1", "node_2", create_using=nx.Graph())
+
+    print(f"Processed graph for link prediction in {round(time() - start_time, 2)}s")
     return data, G_partial
 
 
@@ -204,10 +213,13 @@ def plot_link_prediction_graph(G: nx.Graph, pred_edges: [], pred_acc=None, idx2n
     if pred_acc:
         nx.draw_networkx_edge_labels(G, pos, edge_labels=edges_labels, font_color='red')
 
-    labels = {}
-    for u in G.nodes:
-        labels[u] = str(idx2node[u])
-    nx.draw_networkx_labels(G, pos, labels=labels, font_size=16)
+    if idx2node is not None:
+        labels = {}
+        for u in G.nodes:
+            labels[u] = str(idx2node[u])
+        nx.draw_networkx_labels(G, pos, labels=labels)
+    else:
+        nx.draw_networkx_labels(G, pos=pos)
 
     plt.axis('off')
     plt.show()

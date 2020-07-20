@@ -119,6 +119,13 @@ venv/
 
 .idea/
 
-data/
+#!data/
+data/*
 
-models/
+!data/wiki
+#!data/email-eu
+
+!models/
+models/*
+
+!models/synthetic

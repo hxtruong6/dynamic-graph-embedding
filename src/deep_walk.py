@@ -46,13 +46,13 @@ if __name__ == "__main__":
 
     # Test 1
     if test_num == 1:
-        G = nx.read_edgelist('../data/Wiki_edgelist.txt',
+        G = nx.read_edgelist('../data/wiki/Wiki_edgelist.txt',
                              create_using=nx.DiGraph(), nodetype=None, data=[('weight', int)])
 
         model = DeepWalk(G, walks_per_vertex=20, walk_length=10)
         model.train(embedding_size=128, window_size=5)
         embeddings = model.get_embedding()
-        plot_embeddings_with_labels(G, embeddings, path_file="../data/Wiki_category.txt")
+        plot_embeddings_with_labels(G, embeddings, path_file="../data/wiki/Wiki_category.txt")
 
     # Test 2
     if test_num == 2:
