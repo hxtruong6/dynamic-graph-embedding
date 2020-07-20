@@ -121,11 +121,9 @@ venv/
 
 #!data/
 data/*
-
 !data/wiki
-#!data/email-eu
+!data/email-eu
 
-!models/
+#!models/
 models/*
-
 !models/synthetic
