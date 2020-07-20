@@ -11,7 +11,7 @@ from src.dyn_ge import DynGE
 
 # Dataset link: https://snap.stanford.edu/data/cit-HepTh.html
 from src.static_ge import StaticGE
-from src.utils.link_prediction import preprocessing_graph_for_link_prediction, run_evaluate, run_predict, \
+from src.utils.link_prediction import preprocessing_graph_for_link_prediction, run_link_pred_evaluate, run_predict, \
     top_k_prediction_edges
 
 
@@ -79,7 +79,7 @@ def ciHepTH_link_prediction(G: nx.Graph, epochs=10, top_k=10, show_acc_on_edge=F
     ge.train(epochs=10, skip_print=20, learning_rate=0.001)
     embedding = ge.get_embedding()
 
-    link_pred_model = run_evaluate(G_df, embedding, num_boost_round=2000)
+    link_pred_model = run_link_pred_evaluate(G_df, embedding, num_boost_round=2000)
     possible_edges_df = G_df[G_df['link'] == 0]
     y_pred = run_predict(data=possible_edges_df, embedding=embedding, model=link_pred_model)
     top_k_edges = top_k_prediction_edges(G=G, y_pred=y_pred, possible_edges_df=possible_edges_df, top_k=top_k,
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     # ----- run evaluate link prediction -------
     for i in range(len(graphs)):
         G_df = G_dfs[i]
-        link_pred_model = run_evaluate(data=G_df, embedding=dy_embeddings[i], num_boost_round=10000)
+        link_pred_model = run_link_pred_evaluate(data=G_df, embedding=dy_embeddings[i], num_boost_round=10000)
         possible_edges_df = G_df[G_df['link'] == 0]
         y_pred = run_predict(data=possible_edges_df, embedding=dy_embeddings[i], model=link_pred_model)
         top_k_edges = top_k_prediction_edges(G=graphs[i], y_pred=y_pred, possible_edges_df=possible_edges_df,

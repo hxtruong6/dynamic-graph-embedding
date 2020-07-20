@@ -34,23 +34,29 @@ def get_unconnected_pairs(G: nx.Graph):
 def get_unconnected_pairs_(G: nx.Graph, k_length=2):
     edges_len = dict(nx.all_pairs_shortest_path_length(G, cutoff=k_length))
 
-    all_unconnected_pairs = []
+    unconnected_pairs = []
     appended_pairs = {}
     for u in G.nodes():
         if u not in appended_pairs:
             appended_pairs[u] = {}
+
         for v in edges_len[u].keys():
             if v not in appended_pairs:
                 appended_pairs[v] = {}
-            if u != v and v not in appended_pairs[u] and G.has_edge(u, v) is False:
-                all_unconnected_pairs.append([u, v])
+            if u != v and v not in appended_pairs[u] and not G.has_edge(u, v):
+                unconnected_pairs.append({
+                    'node_1': u,
+                    'node_2': v
+                })
+
                 appended_pairs[u][v] = True
                 appended_pairs[v][u] = True
 
-    return all_unconnected_pairs
+    return unconnected_pairs
 
 
-def run_evaluate(data, embedding, alg=None, num_boost_round=10000, early_stopping_rounds=40):
+def run_link_pred_evaluate(data, embedding, alg=None, num_boost_round=10000, early_stopping_rounds=100):
+    print("--> Run link predict evaluation ---")
     if alg == "Node2Vec":
         x = [(embedding[str(i)] + embedding[str(j)]) for i, j in zip(data['node_1'], data['node_2'])]
     else:
@@ -60,9 +66,14 @@ def run_evaluate(data, embedding, alg=None, num_boost_round=10000, early_stoppin
     X_train, X_test, y_train, y_test = train_test_split(
         np.array(x),
         data['link'],
-        test_size=0.3,
+        test_size=0.25,
         random_state=35,
         stratify=data['link']
+    )
+    print(
+        f"|Link=1|={list(data['link']).count(1)}\t"
+        f"|Link=0|={list(data['link']).count(0)}\t\t"
+        f"|Percent Link=1/Link=0|={round(list(data['link']).count(1) / list(data['link']).count(0), 4)}"
     )
 
     train_data = lightgbm.Dataset(X_train, y_train)
@@ -76,8 +87,8 @@ def run_evaluate(data, embedding, alg=None, num_boost_round=10000, early_stoppin
         'feature_fraction': 0.5,
         'bagging_fraction': 0.5,
         'bagging_freq': 20,
-        'num_threads': 2,
-        'seed': 76,
+        'num_threads': 4,
+        'seed': 6,
         'verbosity': -1
     }
 
@@ -87,7 +98,7 @@ def run_evaluate(data, embedding, alg=None, num_boost_round=10000, early_stoppin
                            valid_sets=test_data,
                            num_boost_round=num_boost_round,
                            early_stopping_rounds=early_stopping_rounds,
-                           verbose_eval=10,
+                           verbose_eval=100,
                            )
 
     y_pred = model.predict(X_test)
@@ -139,51 +150,48 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_p
     print("Pre-processing graph for link prediction...")
     start_time = time()
 
-    node_list_1 = [u for u, _ in G.edges]
-    node_list_2 = [v for _, v in G.edges]
-    graph_df = pd.DataFrame({'node_1': node_list_1, 'node_2': node_list_2})
-    # all_unconnected_pairs = get_unconnected_pairs(G)
+    # Get possible edge can form in the future
+    temp_time = time()
+    print("Get possible unconnected link...", end=" ")
     all_unconnected_pairs = get_unconnected_pairs_(G, k_length=k_length)
+    data = pd.DataFrame(data=all_unconnected_pairs, columns=['node_1', 'node_2'])
+    data['link'] = 0  # add target variable 'link'
+    print(f"{round(time() - temp_time)}s")
 
-    node_1_unlinked = [i[0] for i in all_unconnected_pairs]
-    node_2_unlinked = [i[1] for i in all_unconnected_pairs]
-    data = pd.DataFrame({'node_1': node_1_unlinked,
-                         'node_2': node_2_unlinked})
-    # add target variable 'link'
-    data['link'] = 0
-
+    # Drop some edges which not make graph isolate
+    temp_time = time()
+    print("Drop some current links...", end=" ")
     initial_nodes_len = G.number_of_nodes()
     initial_edges_len = G.number_of_edges()
-    graph_df_temp = graph_df.copy()
-    # empty list to store removable links
-    omissible_links_index = []
     dropped_node_count = 0
-    for i in tqdm(graph_df.index.values):
+    G_partial = G.copy()
+    omissible_links = []
+    initial_edges = list(G.edges)
+    np.random.shuffle(initial_edges)
+
+    for u, v in tqdm(initial_edges):
         if (dropped_node_count / initial_edges_len) >= drop_node_percent:
             break
-        # remove a node pair and build a new graph
-        G_temp = nx.from_pandas_edgelist(graph_df_temp.drop(index=i), "node_1", "node_2", create_using=nx.Graph())
-        # check there is no splitting of graph and number of nodes is same
-        if (nx.number_connected_components(G_temp) == 1) and (len(G_temp.nodes) == initial_nodes_len):
-            omissible_links_index.append(i)
-            graph_df_temp = graph_df_temp.drop(index=i)
+        g_temp = G_partial.copy()
+        g_temp.remove_edge(u, v)
+        if nx.number_connected_components(g_temp) == 1 and g_temp.number_of_nodes() == initial_nodes_len:
+            G_partial.remove_edge(u, v)
+            omissible_links.append({
+                'node_1': u,
+                'node_2': v
+            })
             dropped_node_count += 1
 
     # create dataframe of removable edges
-    removed_edge_graph_df = graph_df.loc[omissible_links_index]
-    # add the target variable 'link'
-    removed_edge_graph_df['link'] = 1
+    removed_edge_graph_df = pd.DataFrame(data=omissible_links, columns=['node_1', 'node_2'])
+    removed_edge_graph_df['link'] = 1  # add the target variable 'link'
+    print(f"{round(time() - start_time)}s")
 
+    print("Create data frame have potential links and removed link...")
     data = data.append(removed_edge_graph_df[['node_1', 'node_2', 'link']], ignore_index=True)
     data = data.astype(int)
 
-    # drop removable edges
-    graph_df_partial = graph_df.drop(index=removed_edge_graph_df.index.values)
-
-    # build graph
-    G_partial = nx.from_pandas_edgelist(graph_df_partial, "node_1", "node_2", create_using=nx.Graph())
-
-    print(f"Processed graph for link prediction in {round(time() - start_time, 2)}s")
+    print(f"Processed graph in {round(time() - start_time, 2)}s")
     return data, G_partial
 
 

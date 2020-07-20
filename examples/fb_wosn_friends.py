@@ -1,5 +1,5 @@
 from time import time
-
+import numpy as np
 import networkx as nx
 import warnings
 
@@ -9,7 +9,7 @@ warnings.filterwarnings("ignore")
 
 from src.dyn_ge import DynGE
 from src.utils.graph_util import graph_to_graph_idx, print_graph_stats, draw_graph
-from src.utils.link_prediction import preprocessing_graph_for_link_prediction, run_evaluate, run_predict, \
+from src.utils.link_prediction import preprocessing_graph_for_link_prediction, run_link_pred_evaluate, run_predict, \
     top_k_prediction_edges
 
 if __name__ == "__main__":
@@ -20,22 +20,27 @@ if __name__ == "__main__":
     epochs = 20
     skip_print = 5
     batch_size = 256
+    seed = 6
 
     # link prediction params
     show_acc_on_edge = True
     top_k = 10
     weight_model_folder = "../models/as_733/"
+    drop_node_percent = 0.6
 
-    # ==========================================================
+    # ====================== Settings =================
+    np.random.seed(seed=seed)
 
-    original_graphs = read_dynamic_graph(folder_path=folder_data, limit=1)
+    # =============================================
+    original_graphs = read_dynamic_graph(folder_path=folder_data, limit=2)
     # g1 = nx.gnm_random_graph(n=40, m=200, seed=6)
-    # original_graphs = [g1]
+    # original_graphs = [g1, g1]
 
     print("Number graphs: ", len(original_graphs))
     print("Origin graphs:")
     for i, g in enumerate(original_graphs):
         print_graph_stats(g, i)
+        print(f"Isolate nodes: {nx.number_of_isolates(g)}")
 
     graphs2idx = []
     idx2nodes = []
@@ -50,10 +55,15 @@ if __name__ == "__main__":
 
     G_dfs = []
     G_partial_list = []
-    for g in graphs:
-        g_df, g_partial = preprocessing_graph_for_link_prediction(G=g, k_length=2, drop_node_percent=0.2)
+
+    print("\n[ALL] Pre-processing graph for link prediction...")
+    start_time = time()
+    for idx, g in enumerate(graphs):
+        print(f"==== Graph {idx}: ")
+        g_df, g_partial = preprocessing_graph_for_link_prediction(G=g, k_length=2, drop_node_percent=drop_node_percent)
         G_dfs.append(g_df)
         G_partial_list.append(g_partial)
+    print(f"[ALL] Processed in {round(time() - start_time, 2)}s\n")
 
     # draw_graph(g=G_partial_list[0], pos=nx.spring_layout(graphs[0], seed=6))
 
@@ -78,7 +88,7 @@ if __name__ == "__main__":
     # ----- run evaluate link prediction -------
     for i in range(len(graphs)):
         G_df = G_dfs[i]
-        link_pred_model = run_evaluate(data=G_df, embedding=dy_embeddings[i], num_boost_round=10000)
+        link_pred_model = run_link_pred_evaluate(data=G_df, embedding=dy_embeddings[i], num_boost_round=20000)
         possible_edges_df = G_df[G_df['link'] == 0]
         y_pred = run_predict(data=possible_edges_df, embedding=dy_embeddings[i], model=link_pred_model)
         top_k_edges = top_k_prediction_edges(G=graphs[i], y_pred=y_pred, possible_edges_df=possible_edges_df,
