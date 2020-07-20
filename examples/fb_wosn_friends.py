@@ -33,6 +33,18 @@ def save_processed_graphs(graphs: [], folder):
         nx.write_edgelist(g, f'{folder}/graph{i}.edgelist', data=False)
 
 
+def save_processed_graph(graph, folder, index):
+    if not exists(folder):
+        os.makedirs(folder)
+    nx.write_edgelist(graph, f'{folder}/graph{index}.edgelist', data=False)
+
+
+def save_graph_df(graph_df: [], folder, index):
+    if not exists(folder):
+        os.makedirs(folder)
+    graph_df.to_csv(join(folder, f"graph_{index}.csv"), index=False)
+
+
 def load_graphs_df(folder):
     files = [f for f in listdir(folder) if isfile(join(folder, f))]
     graphs_df = []
@@ -53,13 +65,14 @@ def load_processed_graphs(folder):
     return graphs
 
 
+
 if __name__ == "__main__":
     # ------------ Params -----------
     folder_data = "../data/as-733"
     processed_data_folder = "../processed_data"
     weight_model_folder = "../models/synthetic"
     load_model = False
-    load_processed_data = True
+    load_processed_data = False
     epochs = 20
     skip_print = 5
     batch_size = 256
@@ -81,7 +94,9 @@ if __name__ == "__main__":
     # =============================================
     # original_graphs = read_dynamic_graph(folder_path=folder_data, limit=2)
     g1 = nx.gnm_random_graph(n=20, m=60, seed=6)
-    original_graphs = [g1]
+    g2 = nx.gnm_random_graph(n=30, m=80, seed=6)
+
+    original_graphs = [g1, g2]
 
     print("Number graphs: ", len(original_graphs))
     print("Origin graphs:")
@@ -98,7 +113,7 @@ if __name__ == "__main__":
     graphs = graphs2idx
 
     # draw_graph(g1, pos=nx.spring_layout(graphs[0], seed=6))
-    draw_graph(graphs[0], idx2node=idx2nodes[0])
+    # draw_graph(graphs[0], idx2node=idx2nodes[0])
 
     if load_processed_data:
         print("Load processed data from disk...")
@@ -115,13 +130,13 @@ if __name__ == "__main__":
                                                                       drop_node_percent=drop_node_percent)
             G_dfs.append(g_df)
             G_partial_list.append(g_partial)
-        # Save processed data
-        # NOTE: save idx graph. Not original graph
-        save_graphs_df(G_dfs, folder=join(processed_data_folder, "dfs"))
-        save_processed_graphs(G_partial_list, folder=join(processed_data_folder, "graphs"))
+            # Save processed data. NOTE: save idx graph. Not original graph
+            save_graph_df(g_df, folder=join(processed_data_folder, "dfs"), index=idx)
+            save_processed_graph(g_partial, folder=join(processed_data_folder, "graphs"), index=idx)
+
         print(f"[ALL] Processed in {round(time() - start_time, 2)}s\n")
 
-    draw_graph(g=G_partial_list[0], pos=nx.spring_layout(graphs[0], seed=6))
+    # draw_graph(g=G_partial_list[0], pos=nx.spring_layout(graphs[0], seed=6))
 
     print("After processing for link prediction graphs:")
     for i, g in enumerate(G_partial_list):
