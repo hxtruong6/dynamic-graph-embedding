@@ -172,22 +172,22 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_p
     for u, v in tqdm(initial_edges):
         if (dropped_node_count / initial_edges_len) >= drop_node_percent:
             break
-        g_temp = G_partial.copy()
-        g_temp.remove_edge(u, v)
-        if nx.number_connected_components(g_temp) == 1 and g_temp.number_of_nodes() == initial_nodes_len:
-            G_partial.remove_edge(u, v)
+        G_partial.remove_edge(u, v)
+        if nx.number_connected_components(G_partial) == 1 and G_partial.number_of_nodes() == initial_nodes_len:
             omissible_links.append({
                 'node_1': u,
                 'node_2': v
             })
             dropped_node_count += 1
+        else:
+            G_partial.add_edge(u, v)
 
     # create dataframe of removable edges
     removed_edge_graph_df = pd.DataFrame(data=omissible_links, columns=['node_1', 'node_2'])
     removed_edge_graph_df['link'] = 1  # add the target variable 'link'
-    print(f"{round(time() - start_time)}s")
+    print(f"{round(time() - temp_time)}s")
 
-    print("Create data frame have potential links and removed link...")
+    print("Create data frame have potential links and removed link.")
     data = data.append(removed_edge_graph_df[['node_1', 'node_2', 'link']], ignore_index=True)
     data = data.astype(int)
 
