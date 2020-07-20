@@ -126,4 +126,4 @@ data/*
 
 #!models/
 models/*
-!models/synthetic
+!models/synthetic/

@@ -151,16 +151,18 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_p
     start_time = time()
 
     # Get possible edge can form in the future
+    print("\tGet possible unconnected link...", end=" ")
     temp_time = time()
-    print("Get possible unconnected link...", end=" ")
+
     all_unconnected_pairs = get_unconnected_pairs_(G, k_length=k_length)
     data = pd.DataFrame(data=all_unconnected_pairs, columns=['node_1', 'node_2'])
     data['link'] = 0  # add target variable 'link'
     print(f"{round(time() - temp_time)}s")
 
     # Drop some edges which not make graph isolate
+    print("\tDrop some current links...", end=" ")
     temp_time = time()
-    print("Drop some current links...", end=" ")
+
     initial_nodes_len = G.number_of_nodes()
     initial_edges_len = G.number_of_edges()
     dropped_node_count = 0
@@ -187,7 +189,7 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_p
     removed_edge_graph_df['link'] = 1  # add the target variable 'link'
     print(f"{round(time() - temp_time)}s")
 
-    print("Create data frame have potential links and removed link.")
+    print("\tCreate data frame have potential links and removed link.")
     data = data.append(removed_edge_graph_df[['node_1', 'node_2', 'link']], ignore_index=True)
     data = data.astype(int)
 

@@ -15,8 +15,8 @@ from src.utils.link_prediction import preprocessing_graph_for_link_prediction, r
 if __name__ == "__main__":
     # ------------ Params -----------
     folder_data = "../data/as-733"
+    weight_model_folder = "../models/synthetic"
     load_model = False
-    folder_path = "../models/fb"
     epochs = 20
     skip_print = 5
     batch_size = 256
@@ -25,16 +25,15 @@ if __name__ == "__main__":
     # link prediction params
     show_acc_on_edge = True
     top_k = 10
-    weight_model_folder = "../models/as_733/"
     drop_node_percent = 0.6
 
     # ====================== Settings =================
     np.random.seed(seed=seed)
 
     # =============================================
-    original_graphs = read_dynamic_graph(folder_path=folder_data, limit=2)
-    # g1 = nx.gnm_random_graph(n=40, m=200, seed=6)
-    # original_graphs = [g1, g1]
+    # original_graphs = read_dynamic_graph(folder_path=folder_data, limit=2)
+    g1 = nx.gnm_random_graph(n=100, m=500, seed=6)
+    original_graphs = [g1, g1]
 
     print("Number graphs: ", len(original_graphs))
     print("Origin graphs:")
@@ -73,15 +72,18 @@ if __name__ == "__main__":
 
     # -------------------------------
     dy_ge = DynGE(graphs=G_partial_list, embedding_dim=4)
-    print("\n-----------\nStart total training...")
-    start_time = time()
-    if load_model and folder_path:
-        dy_ge.load_models(folder_path=folder_path)
+    if load_model and weight_model_folder:
+        print("\n-----------\nStart load model...")
+        start_time = time()
+        dy_ge.load_models(folder_path=weight_model_folder)
+        print(f"Loaded model: {round(time() - start_time, 2)}s\n--------------\n")
+
     else:
+        print("\n-----------\nStart total training...")
+        start_time = time()
         dy_ge.train(prop_size=0.3, epochs=epochs, skip_print=skip_print, net2net_applied=False, learning_rate=0.0005,
                     filepath=weight_model_folder, batch_size=batch_size)
-
-    print(f"Finish total training: {round(time() - start_time, 2)}s\n--------------")
+        print(f"Finish total training: {round(time() - start_time, 2)}s\n--------------\n")
 
     dy_embeddings = dy_ge.get_all_embeddings()
 

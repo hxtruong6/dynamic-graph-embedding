@@ -5,6 +5,7 @@ import scipy.sparse as sparse
 
 from src.data_preprocessing.data_preprocessing import next_datasets, get_graph_from_file
 from src.utils.autoencoder import Autoencoder
+from src.utils.model_utils import save_custom_model
 from src.utils.visualize import plot_losses, plot_embeddings_with_labels
 
 
@@ -63,7 +64,8 @@ class StaticGE(object):
         loss_2 = loss_2nd(X_hat, X, beta)
         return loss_2 + alpha * loss_1
 
-    def train(self, batch_size=1, epochs=1, learning_rate=0.003, skip_print=5):
+    def train(self, batch_size=1, epochs=1, learning_rate=0.003, skip_print=5, save_model_point=10,
+              model_folder_path=None):
         def train_func(loss, model, opt, inputs, alpha, beta):
             with tf.GradientTape() as tape:
                 gradients = tape.gradient(
@@ -98,6 +100,8 @@ class StaticGE(object):
                     if epoch == 0 or (epoch + 1) % skip_print == 0:
                         print(f"\tEpoch {epoch + 1}: Loss = {mean_epoch_loss}")
                     losses.append(mean_epoch_loss)
+                    if (model_folder_path is not None) and (epoch + 1) % save_model_point == 0:
+                        save_custom_model(model=self.model, model_folder_path=model_folder_path, checkpoint=epoch + 1)
 
                 plot_losses(losses, title="Train GE", x_label="Epoch", y_label="Loss value")
                 print(f"Loss = {losses[-1]}")
