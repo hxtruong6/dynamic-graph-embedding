@@ -48,10 +48,12 @@ def read_dynamic_graph(folder_path=None, limit=None):
     graphs = []
 
     files = [f for f in listdir(folder_path) if isfile(join(folder_path, f))]
+    files = sorted(files)
 
     for idx, file in enumerate(files):
         if limit is not None and idx == limit:
             break
+        print(f"[{idx}]File edges list: {file}")
         G = get_graph_from_file(join(folder_path, file))
         graphs.append(G)
 

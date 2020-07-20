@@ -144,6 +144,7 @@ class DynGE(object):
             v1=self.v1,
             v2=self.v2
         )
+        print(f"\t--- Training graph {0} ---")
         ge = StaticGE(G=self.graphs[0], model=model)
         ge.train(batch_size=batch_size, epochs=epochs, skip_print=skip_print, learning_rate=learning_rate)
         # model.info(show_config=True)
@@ -161,6 +162,8 @@ class DynGE(object):
             curr_model = handle_expand_model(model=prev_model, input_dim=input_dim,
                                              prop_size=prop_size, net2net_applied=net2net_applied)
             ge = StaticGE(G=graph, model=curr_model)
+            print(f"\t--- Training graph {i} ---")
+
             ge.train(batch_size=batch_size, epochs=epochs, skip_print=skip_print, learning_rate=learning_rate)
 
             self.static_ges.append(ge)
@@ -221,5 +224,3 @@ if __name__ == "__main__":
     embeddings = dy_ge.get_all_embeddings()
     for e in embeddings:
         plot_embedding(embedding=e)
-
-

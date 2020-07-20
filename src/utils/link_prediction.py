@@ -91,7 +91,11 @@ def run_evaluate(data, embedding, alg=None, num_boost_round=10000, early_stoppin
                            )
 
     y_pred = model.predict(X_test)
-    print(f"#----\nROC AUC Score: {round(roc_auc_score(y_test, y_pred, average=None), 2)}")
+
+    try:
+        print(f"#----\nROC AUC Score: {round(roc_auc_score(y_test, y_pred), 2)}")
+    except ValueError:
+        print("ROC AUC has only one class: ", int(y_pred[0]))
     # roc_curve(y_test, y_pred)
     return model
 

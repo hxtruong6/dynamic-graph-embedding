@@ -1,3 +1,5 @@
+from time import time
+
 import networkx as nx
 import warnings
 
@@ -11,10 +13,24 @@ from src.utils.link_prediction import preprocessing_graph_for_link_prediction, r
     top_k_prediction_edges
 
 if __name__ == "__main__":
-    # folder_data = "../data/as-733"
-    # original_graphs = read_dynamic_graph(folder_path="../data/as-733", limit=2)
-    g1 = nx.gnm_random_graph(n=40, m=200, seed=6)
-    original_graphs = [g1]
+    # ------------ Params -----------
+    folder_data = "../data/as-733"
+    load_model = False
+    folder_path = "../models/fb"
+    epochs = 20
+    skip_print = 5
+    batch_size = 256
+
+    # link prediction params
+    show_acc_on_edge = True
+    top_k = 10
+    weight_model_folder = "../models/as_733/"
+
+    # ==========================================================
+
+    original_graphs = read_dynamic_graph(folder_path=folder_data, limit=1)
+    # g1 = nx.gnm_random_graph(n=40, m=200, seed=6)
+    # original_graphs = [g1]
 
     print("Number graphs: ", len(original_graphs))
     print("Origin graphs:")
@@ -44,23 +60,18 @@ if __name__ == "__main__":
     print("After processing for link prediction graphs:")
     for i, g in enumerate(G_partial_list):
         print_graph_stats(g, i)
-    # ------------ Params -----------
-    load_model = False
-    folder_path = "../models/fb"
-    epochs = 100
-    skip_print = 100
-
-    # link prediction params
-    show_acc_on_edge = True
-    top_k = 10
 
     # -------------------------------
     dy_ge = DynGE(graphs=G_partial_list, embedding_dim=4)
+    print("\n-----------\nStart total training...")
+    start_time = time()
     if load_model and folder_path:
         dy_ge.load_models(folder_path=folder_path)
     else:
         dy_ge.train(prop_size=0.3, epochs=epochs, skip_print=skip_print, net2net_applied=False, learning_rate=0.0005,
-                    filepath="../models/synthetic/")
+                    filepath=weight_model_folder, batch_size=batch_size)
+
+    print(f"Finish total training: {round(time() - start_time, 2)}s\n--------------")
 
     dy_embeddings = dy_ge.get_all_embeddings()
 

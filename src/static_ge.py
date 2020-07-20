@@ -95,7 +95,7 @@ class StaticGE(object):
                     # tf.summary.scalar('loss', loss_values, step=epoch)
                     # embedding = self.get_embedding()
                     mean_epoch_loss = np.mean(epoch_loss)
-                    if (epoch + 1) % skip_print == 0:
+                    if epoch == 0 or (epoch + 1) % skip_print == 0:
                         print(f"\tEpoch {epoch + 1}: Loss = {mean_epoch_loss}")
                     losses.append(mean_epoch_loss)
 
@@ -117,7 +117,6 @@ class StaticGE(object):
     def get_model(self):
         return self.model
 
-
     # def save_model(self, filepath=None):
     #     if filepath is None:
     #         raise ValueError("filepath must be not None")
@@ -129,6 +128,7 @@ class StaticGE(object):
     #     if filepath is None:
     #         raise ValueError("filepath must be not None")
     #     self.model = tf.keras.models.load_model(filepath)
+
 
 if __name__ == "__main__":
     # G_tmp = get_graph_from_file(filename="../data/ca-AstroPh.txt")
@@ -147,4 +147,5 @@ if __name__ == "__main__":
     ge.train(batch_size=64, epochs=300, skip_print=10, learning_rate=0.001)
     embeddings = ge.get_embedding()
     # classify_embeddings_evaluate(embeddings, label_file="../data/email-eu/email-Eu-core-department-labels.txt")
-    plot_embeddings_with_labels(G, embeddings=embeddings, path_file="../data/email-eu/email-Eu-core-department-labels.txt")
+    plot_embeddings_with_labels(G, embeddings=embeddings,
+                                path_file="../data/email-eu/email-Eu-core-department-labels.txt")
