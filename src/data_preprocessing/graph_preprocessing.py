@@ -1,5 +1,7 @@
 from os import listdir
 from os.path import isfile, join
+from time import time
+
 import networkx as nx
 import numpy as np
 import tensorflow as tf
@@ -41,25 +43,6 @@ def next_datasets(A, L, batch_size):
         i += 1
 
 
-def read_dynamic_graph(folder_path=None, limit=None):
-    if folder_path is None:
-        raise ValueError("folder_path must be provided.")
-
-    graphs = []
-
-    files = [f for f in listdir(folder_path) if isfile(join(folder_path, f))]
-    files = sorted(files)
-
-    for idx, file in enumerate(files):
-        if limit is not None and idx == limit:
-            break
-        print(f"[{idx}]File edges list: {file}")
-        G = get_graph_from_file(join(folder_path, file))
-        graphs.append(G)
-
-    return graphs
-
-
 def read_node_label(filename, skip_head=False):
     X = []
     Y = []
@@ -71,6 +54,60 @@ def read_node_label(filename, skip_head=False):
             X.append(int(vec[0]))
             Y.append(vec[1:])
     return X, Y
+
+
+def convert_node2idx(g: nx.Graph):
+    node2idx = {}
+    idx2node = []
+    node_size = 0
+    for node in sorted(g.nodes):
+        node2idx[node] = node_size
+        idx2node.append(node)
+        node_size += 1
+    return node2idx
+
+
+def convert_graphs_to_idx(graphs):
+    graphs_len = len(graphs)
+
+    print("Start convert graph to index...", end=" ")
+    start_time = time()
+
+    dfs = []
+    for i in range(graphs_len):
+        df = nx.to_pandas_edgelist(graphs[i])
+        dfs.append(df)
+
+    node2idx = convert_node2idx(graphs[-1])
+
+    for i in range(graphs_len):
+        dfs[i]['source'] = dfs[i]['source'].apply(lambda x: node2idx[x])
+        dfs[i]['target'] = dfs[i]['target'].apply(lambda x: node2idx[x])
+        graphs[i] = nx.from_pandas_edgelist(dfs[i])
+
+    print(f"{round(time() - start_time, 2)}s")
+    return graphs
+
+
+def read_dynamic_graph(folder_path=None, limit=None, convert_to_idx=True):
+    if folder_path is None:
+        raise ValueError("folder_path must be provided.")
+
+    graphs = []
+    files = [f for f in listdir(folder_path) if isfile(join(folder_path, f))]
+    files = sorted(files)
+
+    for idx, file in enumerate(files):
+        if limit is not None and idx == limit:
+            break
+        print(f"[{idx}]Reading {file}")
+        G = get_graph_from_file(join(folder_path, file))
+        graphs.append(G)
+
+    if not convert_to_idx:
+        return graphs
+
+    return convert_graphs_to_idx(graphs)
 
 
 if __name__ == "__main__":

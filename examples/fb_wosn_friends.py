@@ -7,7 +7,7 @@ import networkx as nx
 import pandas as pd
 import warnings
 
-from src.data_preprocessing.data_preprocessing import read_dynamic_graph, get_graph_from_file
+from src.data_preprocessing.graph_preprocessing import read_dynamic_graph, get_graph_from_file
 
 warnings.filterwarnings("ignore")
 
@@ -65,15 +65,17 @@ def load_processed_graphs(folder):
     return graphs
 
 
+# https://stackoverflow.com/questions/39450065/python-3-read-write-compressed-json-objects-from-to-gzip-file
+
 if __name__ == "__main__":
     # ------------ Params -----------
-    folder_data = "../data/as-733"
+    folder_data = "../data/fb"
     processed_data_folder = "../processed_data"
-    weight_model_folder = "../models/synthetic"
+    weight_model_folder = "../models/fb"
     load_model = False
     load_processed_data = False
-    epochs = 500
-    skip_print = 100
+    epochs = 10
+    skip_print = 5
     batch_size = 256
     seed = 6
 
@@ -91,26 +93,17 @@ if __name__ == "__main__":
         os.makedirs(weight_model_folder)
 
     # =============================================
-    # original_graphs = read_dynamic_graph(folder_path=folder_data, limit=None)
-    g1 = nx.gnm_random_graph(n=30, m=60, seed=6)
+    graphs = read_dynamic_graph(folder_path=folder_data, limit=2, convert_to_idx=True)
+    # g1 = nx.gnm_random_graph(n=30, m=60, seed=6)
     # g2 = nx.gnm_random_graph(n=30, m=70, seed=6)
-    original_graphs = [g1]
+    # original_graphs = [g1]
 
-    print("Number graphs: ", len(original_graphs))
+    print("Number graphs: ", len(graphs))
     print("Origin graphs:")
-    for i, g in enumerate(original_graphs):
+    for i, g in enumerate(graphs):
         print_graph_stats(g, i)
         print(f"Isolate nodes: {nx.number_of_isolates(g)}")
-
-    graphs2idx = []
-    idx2nodes = []
-    for g in original_graphs:
-        graph2idx, idx2node = graph_to_graph_idx(g)
-        graphs2idx.append(graph2idx)
-        idx2nodes.append(idx2node)
-    graphs = graphs2idx
-
-    draw_graph(graphs[0], idx2node=idx2nodes[0])
+        draw_graph(g, limit_node=20, title=f"Graph {i}")
 
     if load_processed_data:
         print("Load processed data from disk...")
@@ -132,8 +125,6 @@ if __name__ == "__main__":
             save_processed_graph(g_partial, folder=join(processed_data_folder, "graphs"), index=idx)
 
         print(f"[ALL] Processed in {round(time() - start_time, 2)}s\n")
-
-    draw_graph(g=G_partial_list[0], pos=nx.spring_layout(graphs[0], seed=6))
 
     print("After processing for link prediction graphs:")
     for i, g in enumerate(G_partial_list):
@@ -164,4 +155,4 @@ if __name__ == "__main__":
         y_pred = run_predict(data=possible_edges_df, embedding=dy_embeddings[i], model=link_pred_model)
         top_k_edges = top_k_prediction_edges(G=graphs[i], y_pred=y_pred, possible_edges_df=possible_edges_df,
                                              top_k=top_k, show_acc_on_edge=show_acc_on_edge, plot_link_pred=True,
-                                             limit_node=50, idx2node=idx2nodes[i])
+                                             limit_node=50)

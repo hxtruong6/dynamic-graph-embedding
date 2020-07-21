@@ -129,3 +129,4 @@ models/*
 !models/synthetic/
 
 processed_data/*
+!processed_data/synthetic/

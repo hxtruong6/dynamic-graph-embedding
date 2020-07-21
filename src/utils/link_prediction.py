@@ -131,7 +131,11 @@ def top_k_prediction_edges(G: nx.Graph, y_pred, possible_edges_df, top_k, show_a
         else:
             plot_link_prediction_graph(G=G, pred_edges=sorted_possible_edges[:top_k], idx2node=idx2node)
 
-    original_pred_edges = [(idx2node[u], idx2node[v]) for u, v in sorted_possible_edges[:top_k]]
+    if idx2node is None:
+        original_pred_edges = sorted_possible_edges[:top_k]
+    else:
+        original_pred_edges = [(idx2node[u], idx2node[v]) for u, v in sorted_possible_edges[:top_k]]
+
     print(f"Top {top_k} predicted edges: edge|accuracy")
     for i in range(top_k):
         print(f"{original_pred_edges[i]} : {round(sorted_y_pred[i], 2)}")

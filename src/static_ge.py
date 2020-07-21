@@ -3,7 +3,7 @@ import networkx as nx
 import numpy as np
 import scipy.sparse as sparse
 
-from src.data_preprocessing.data_preprocessing import next_datasets, get_graph_from_file
+from src.data_preprocessing.graph_preprocessing import next_datasets, get_graph_from_file
 from src.utils.autoencoder import Autoencoder
 from src.utils.model_utils import save_custom_model
 from src.utils.visualize import plot_losses, plot_embeddings_with_labels

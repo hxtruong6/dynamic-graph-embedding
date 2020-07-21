@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 
-from src.data_preprocessing.data_preprocessing import read_node_label
+from src.data_preprocessing.graph_preprocessing import read_node_label
 
 
 def plot_embeddings_with_labels(graph, embeddings, path_file=None):
