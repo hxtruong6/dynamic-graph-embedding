@@ -31,7 +31,7 @@ class DynGE(object):
         return self.static_ges[index].get_embedding()
 
     def train(self, prop_size=0.4, batch_size=64, epochs=100, filepath="../models/generate/", skip_print=5,
-              net2net_applied=False, learning_rate=0.003):
+              net2net_applied=False, learning_rate=0.001, save_model_point=None):
         init_hidden_dims = get_hidden_layer(prop_size=prop_size, input_dim=len(self.graphs[0].nodes()),
                                             embedding_dim=self.embedding_dim)
         model = Autoencoder(
@@ -73,7 +73,7 @@ class DynGE(object):
             print(f"--- Training graph {i} ---")
             start_time = time()
             ge.train(batch_size=batch_size, epochs=epochs, skip_print=skip_print, learning_rate=learning_rate,
-                     model_folder_path=self.model_folder_paths[i])
+                     save_model_point=save_model_point, model_folder_path=self.model_folder_paths[i])
             print(f"Training time in {round(time() - start_time, 2)}s")
 
             self.static_ges.append(ge)

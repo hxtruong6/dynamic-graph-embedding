@@ -65,7 +65,6 @@ def load_processed_graphs(folder):
     return graphs
 
 
-
 if __name__ == "__main__":
     # ------------ Params -----------
     folder_data = "../data/as-733"
@@ -73,15 +72,15 @@ if __name__ == "__main__":
     weight_model_folder = "../models/synthetic"
     load_model = False
     load_processed_data = False
-    epochs = 20
-    skip_print = 5
+    epochs = 500
+    skip_print = 100
     batch_size = 256
     seed = 6
 
     # link prediction params
     show_acc_on_edge = True
     top_k = 10
-    drop_node_percent = 0.6
+    drop_node_percent = 0.5
 
     # ====================== Settings =================
     np.random.seed(seed=seed)
@@ -92,11 +91,10 @@ if __name__ == "__main__":
         os.makedirs(weight_model_folder)
 
     # =============================================
-    # original_graphs = read_dynamic_graph(folder_path=folder_data, limit=2)
-    g1 = nx.gnm_random_graph(n=20, m=60, seed=6)
-    g2 = nx.gnm_random_graph(n=30, m=80, seed=6)
-
-    original_graphs = [g1, g2]
+    # original_graphs = read_dynamic_graph(folder_path=folder_data, limit=None)
+    g1 = nx.gnm_random_graph(n=30, m=60, seed=6)
+    # g2 = nx.gnm_random_graph(n=30, m=70, seed=6)
+    original_graphs = [g1]
 
     print("Number graphs: ", len(original_graphs))
     print("Origin graphs:")
@@ -112,8 +110,7 @@ if __name__ == "__main__":
         idx2nodes.append(idx2node)
     graphs = graphs2idx
 
-    # draw_graph(g1, pos=nx.spring_layout(graphs[0], seed=6))
-    # draw_graph(graphs[0], idx2node=idx2nodes[0])
+    draw_graph(graphs[0], idx2node=idx2nodes[0])
 
     if load_processed_data:
         print("Load processed data from disk...")
@@ -136,7 +133,7 @@ if __name__ == "__main__":
 
         print(f"[ALL] Processed in {round(time() - start_time, 2)}s\n")
 
-    # draw_graph(g=G_partial_list[0], pos=nx.spring_layout(graphs[0], seed=6))
+    draw_graph(g=G_partial_list[0], pos=nx.spring_layout(graphs[0], seed=6))
 
     print("After processing for link prediction graphs:")
     for i, g in enumerate(G_partial_list):
@@ -153,8 +150,8 @@ if __name__ == "__main__":
     else:
         print("\n-----------\nStart total training...")
         start_time = time()
-        dy_ge.train(prop_size=0.3, epochs=epochs, skip_print=skip_print, net2net_applied=False, learning_rate=0.0005,
-                    filepath=weight_model_folder, batch_size=batch_size)
+        dy_ge.train(prop_size=0.3, epochs=epochs, skip_print=skip_print, net2net_applied=False, learning_rate=0.0001,
+                    batch_size=batch_size, filepath=weight_model_folder, save_model_point=None)
         print(f"Finish total training: {round(time() - start_time, 2)}s\n--------------\n")
 
     dy_embeddings = dy_ge.get_all_embeddings()
