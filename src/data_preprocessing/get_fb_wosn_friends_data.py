@@ -94,9 +94,11 @@ for i in range(k):
 
 NUMBER_SAVE_GRAPH = 10
 
-folder = "fb"
+folder = "../../data/fb"
 if not os.path.exists(folder):
     os.makedirs(folder)
 
+print("Saving edges list to disk...")
 for i in range(min(NUMBER_SAVE_GRAPH, k)):
     nx.write_edgelist(graphs[i],f'{folder}/graph_{str(i//10)+str(i%10)}.edgelist',data=False)
+    print(f"Saved graph {i}: \t|V|={graphs[i].number_of_nodes()}\t|E|={graphs[i].number_of_edges()}")

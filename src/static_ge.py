@@ -66,7 +66,6 @@ class StaticGE(object):
 
     def train(self, batch_size=1, epochs=1, learning_rate=0.003, skip_print=5, save_model_point=50,
               model_folder_path=None):
-        @tf.function
         def train_step(loss, model, opt, inputs, alpha, beta):
             with tf.GradientTape() as tape:
                 gradients = tape.gradient(

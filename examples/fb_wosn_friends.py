@@ -60,7 +60,7 @@ if __name__ == "__main__":
     weight_model_folder = "../models/fb"
     load_model = False
     load_processed_data = False
-    epochs = 1
+    epochs = 10
     skip_print = 5
     batch_size = 256
     seed = 6
@@ -79,10 +79,10 @@ if __name__ == "__main__":
         os.makedirs(weight_model_folder)
 
     # =============================================
-    # graphs, idx2node = read_dynamic_graph(folder_path=folder_data, limit=2, convert_to_idx=True)
-    g1 = nx.gnm_random_graph(n=30, m=100, seed=6)
-    g2 = nx.gnm_random_graph(n=60, m=200, seed=6)
-    graphs = [g1, g2]
+    graphs, idx2node = read_dynamic_graph(folder_path=folder_data, limit=1, convert_to_idx=True)
+    # g1 = nx.gnm_random_graph(n=30, m=100, seed=6)
+    # g2 = nx.gnm_random_graph(n=60, m=200, seed=6)
+    # graphs = [g1, g2]
 
     print("Number graphs: ", len(graphs))
     print("Origin graphs:")
