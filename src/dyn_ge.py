@@ -2,6 +2,8 @@ from os.path import join
 import os
 from time import time
 import networkx as nx
+
+from src.data_preprocessing.graph_preprocessing import read_dynamic_graph
 from src.static_ge import StaticGE
 from src.utils.autoencoder import Autoencoder
 from src.utils.model_utils import get_hidden_layer, handle_expand_model, save_custom_model, load_custom_model
@@ -51,7 +53,7 @@ class DynGE(object):
         print(f"--- Training graph {0} ---")
         start_time = time()
         ge.train(batch_size=batch_size, epochs=epochs, skip_print=skip_print, learning_rate=learning_rate,
-                 model_folder_path=self.model_folder_paths[0])
+                 save_model_point=save_model_point, model_folder_path=self.model_folder_paths[0])
         print(f"Training time in {round(time() - start_time, 2)}s")
 
         # model.info(show_config=True)
@@ -84,6 +86,8 @@ class DynGE(object):
         return model
 
     def load_models(self, folder_path):
+        print("Loading models...", end=" ")
+        start_time = time()
         model_folders_paths = os.listdir(folder_path)
         self.model_folder_paths = []
         self.static_ges = []
@@ -97,6 +101,7 @@ class DynGE(object):
 
             ge = StaticGE(G=self.graphs[i], model=model)
             self.static_ges.append(ge)
+        print(f"{round(time() - start_time, 2)}s")
 
     def train_from_checkpoint(self, folder_path, batch_size=64, epochs=10, skip_print=10, learning_rate=0.001,
                               filepath=None):
@@ -116,17 +121,21 @@ class DynGE(object):
 
 
 if __name__ == "__main__":
-    g1 = nx.complete_graph(100)
-    g2 = nx.complete_graph(150)
-    g3 = nx.complete_graph(180)
+    g1 = nx.gnm_random_graph(n=300, m=900, seed=6)
+    g2 = nx.gnm_random_graph(n=600, m=2000, seed=6)
+    g3 = nx.gnm_random_graph(n=900, m=3500, seed=6)
     graphs = [g1, g1, g1]
+
+    graphs, _ = read_dynamic_graph(folder_path="../data/fb", convert_to_idx=True, limit=1)
+
     dy_ge = DynGE(graphs=graphs, embedding_dim=4)
-    # dy_ge.train(prop_size=0.4, epochs=300, skip_print=30, net2net_applied=False, learning_rate=0.0005,
-    #             filepath="../models/generate/")
+    # dy_ge.train(prop_size=0.4, epochs=1, skip_print=30, net2net_applied=False, learning_rate=0.0005,
+    #             filepath="../models/generate/", save_model_point=None)
     dy_ge.load_models(folder_path="../models/generate")
     # dy_ge.train_from_checkpoint(folder_path="../models/generate/", filepath="../models/checkpoints_1", epochs=200,
     #                             skip_print=20, learning_rate=0.00005)
 
-    embeddings = dy_ge.get_all_embeddings()
-    for e in embeddings:
-        plot_embedding(embedding=e)
+    print("Show embedding")
+    # embeddings = dy_ge.get_all_embeddings()
+    # for e in embeddings:
+    #     plot_embedding(embedding=e)

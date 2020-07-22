@@ -46,7 +46,7 @@ def handle_expand_model(model: Autoencoder, input_dim, net2net_applied=False, pr
     return model
 
 
-def save_custom_model(model: Autoencoder, model_folder_path, checkpoint=None):
+def save_custom_model(model: Autoencoder, model_folder_path, checkpoint=None, compress=True):
     folder_path, name = model_folder_path['folder_path'], model_folder_path['name']
     if checkpoint is not None:
         if folder_path[-1] == '/':
@@ -64,7 +64,8 @@ def save_custom_model(model: Autoencoder, model_folder_path, checkpoint=None):
 
     # TODO: how to use save_weights
     # model.save_weights(join(folder_path, name))
-    save_weights_model(weights=model.get_weights_model(), filepath=join(folder_path, name + '_weights.json'))
+    save_weights_model(weights=model.get_weights_model(), filepath=join(folder_path, name + '_weights.json'),
+                       compress=compress)
 
     config_layer = model.get_config_layer()
     with open(join(folder_path, name + '.json'), 'w') as fi:
@@ -91,12 +92,16 @@ def load_custom_model(model_folder_path):
     return model
 
 
-def save_weights_model(weights, filepath):
-    pd.DataFrame(weights).to_json(filepath, orient='split')
+def save_weights_model(weights, filepath, compress=True):
+    if filepath[-3:] != ".gz":
+        filepath += ".gz"
+    pd.DataFrame(weights).to_json(filepath, compression='gzip')
 
 
 def load_weights_model(filepath):
-    weights = pd.read_json(filepath, orient='split').to_numpy()
+    if filepath[-3:] != ".gz":
+        filepath += ".gz"
+    weights = pd.read_json(filepath, compression='gzip').to_numpy()
     for layer_index in range(len(weights[0])):
         weights[0][layer_index][0] = np.array(weights[0][layer_index][0], dtype=np.float32)
         weights[0][layer_index][1] = np.array(weights[0][layer_index][1], dtype=np.float32)

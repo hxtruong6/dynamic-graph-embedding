@@ -17,32 +17,17 @@ from src.utils.link_prediction import preprocessing_graph_for_link_prediction, r
     top_k_prediction_edges
 
 
-def save_graphs_df(graphs_df: [], folder):
-    g_df: pd.DataFrame
-    if not exists(folder):
-        os.makedirs(folder)
-    for i, g_df in enumerate(graphs_df):
-        g_df.to_csv(join(folder, f"graph_{i}.csv"), index=False)
-
-
-def save_processed_graphs(graphs: [], folder):
-    g: nx.Graph
-    if not exists(folder):
-        os.makedirs(folder)
-    for i, g in enumerate(graphs):
-        nx.write_edgelist(g, f'{folder}/graph{i}.edgelist', data=False)
-
-
 def save_processed_graph(graph, folder, index):
     if not exists(folder):
         os.makedirs(folder)
-    nx.write_edgelist(graph, f'{folder}/graph{index}.edgelist', data=False)
+    nx.write_edgelist(graph, f'{folder}/graph{index}.edgelist.', data=False)
 
 
-def save_graph_df(graph_df: [], folder, index):
+def save_graph_df(graph_df: pd.DataFrame, folder, index):
     if not exists(folder):
         os.makedirs(folder)
-    graph_df.to_csv(join(folder, f"graph_{index}.csv"), index=False)
+    graph_df.to_json(join(folder, f"graph_{index}.json.gz"))
+    # graph_df.to_csv(join(folder, f"graph_{index}.csv"), index=False)
 
 
 def load_graphs_df(folder):
@@ -50,7 +35,8 @@ def load_graphs_df(folder):
     graphs_df = []
     for f in sorted(files):
         graphs_df.append(
-            pd.read_csv(join(folder, f))
+            # pd.read_csv(join(folder, f))
+            pd.read_json(join(folder, f), compression='gzip')
         )
     return graphs_df
 
@@ -93,7 +79,7 @@ if __name__ == "__main__":
         os.makedirs(weight_model_folder)
 
     # =============================================
-    graphs, idx2node = read_dynamic_graph(folder_path=folder_data, limit=3, convert_to_idx=True)
+    graphs, idx2node = read_dynamic_graph(folder_path=folder_data, limit=2, convert_to_idx=True)
     # g1 = nx.gnm_random_graph(n=30, m=60, seed=6)
     # g2 = nx.gnm_random_graph(n=30, m=70, seed=6)
     # original_graphs = [g1]
@@ -142,7 +128,8 @@ if __name__ == "__main__":
     else:
         print("\n-----------\nStart total training...")
         start_time = time()
-        dy_ge.train(prop_size=0.3, epochs=epochs, skip_print=skip_print, net2net_applied=False, learning_rate=0.0001,
+        dy_ge.train(prop_size=0.3, epochs=epochs, skip_print=skip_print, net2net_applied=False,
+                    learning_rate=0.0001,
                     batch_size=batch_size, filepath=weight_model_folder, save_model_point=None)
         print(f"Finish total training: {round(time() - start_time, 2)}s\n--------------\n")
 
