@@ -70,11 +70,11 @@ def load_processed_graphs(folder):
 if __name__ == "__main__":
     # ------------ Params -----------
     folder_data = "../data/fb"
-    processed_data_folder = "../processed_data"
+    processed_data_folder = "../processed_data/fb"
     weight_model_folder = "../models/fb"
     load_model = False
     load_processed_data = False
-    epochs = 10
+    epochs = 1
     skip_print = 5
     batch_size = 256
     seed = 6
@@ -93,7 +93,7 @@ if __name__ == "__main__":
         os.makedirs(weight_model_folder)
 
     # =============================================
-    graphs = read_dynamic_graph(folder_path=folder_data, limit=2, convert_to_idx=True)
+    graphs, idx2node = read_dynamic_graph(folder_path=folder_data, limit=3, convert_to_idx=True)
     # g1 = nx.gnm_random_graph(n=30, m=60, seed=6)
     # g2 = nx.gnm_random_graph(n=30, m=70, seed=6)
     # original_graphs = [g1]
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     for i, g in enumerate(graphs):
         print_graph_stats(g, i)
         print(f"Isolate nodes: {nx.number_of_isolates(g)}")
-        draw_graph(g, limit_node=20, title=f"Graph {i}")
+        # draw_graph(g, limit_node=25)
 
     if load_processed_data:
         print("Load processed data from disk...")
@@ -123,6 +123,7 @@ if __name__ == "__main__":
             # Save processed data. NOTE: save idx graph. Not original graph
             save_graph_df(g_df, folder=join(processed_data_folder, "dfs"), index=idx)
             save_processed_graph(g_partial, folder=join(processed_data_folder, "graphs"), index=idx)
+            # draw_graph(g=g_partial, limit_node=25)
 
         print(f"[ALL] Processed in {round(time() - start_time, 2)}s\n")
 
@@ -150,9 +151,9 @@ if __name__ == "__main__":
     # ----- run evaluate link prediction -------
     for i in range(len(graphs)):
         G_df = G_dfs[i]
-        link_pred_model = run_link_pred_evaluate(data=G_df, embedding=dy_embeddings[i], num_boost_round=20000)
+        link_pred_model = run_link_pred_evaluate(graph_df=G_df, embedding=dy_embeddings[i], num_boost_round=20000)
         possible_edges_df = G_df[G_df['link'] == 0]
         y_pred = run_predict(data=possible_edges_df, embedding=dy_embeddings[i], model=link_pred_model)
         top_k_edges = top_k_prediction_edges(G=graphs[i], y_pred=y_pred, possible_edges_df=possible_edges_df,
                                              top_k=top_k, show_acc_on_edge=show_acc_on_edge, plot_link_pred=True,
-                                             limit_node=50)
+                                             limit_node=25)

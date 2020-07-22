@@ -183,7 +183,7 @@ if __name__ == "__main__":
     # ----- run evaluate link prediction -------
     for i in range(len(graphs)):
         G_df = G_dfs[i]
-        link_pred_model = run_link_pred_evaluate(data=G_df, embedding=dy_embeddings[i], num_boost_round=20000)
+        link_pred_model = run_link_pred_evaluate(graph_df=G_df, embedding=dy_embeddings[i], num_boost_round=20000)
         possible_edges_df = G_df[G_df['link'] == 0]
         y_pred = run_predict(data=possible_edges_df, embedding=dy_embeddings[i], model=link_pred_model)
         top_k_edges = top_k_prediction_edges(G=graphs[i], y_pred=y_pred, possible_edges_df=possible_edges_df,

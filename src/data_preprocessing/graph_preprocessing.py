@@ -67,10 +67,28 @@ def convert_node2idx(g: nx.Graph):
     return node2idx
 
 
+def get_dyn_graph_to_idx(graphs: []):
+    node2idx = {}
+    idx2node = []
+    node_count = 0
+    for node in graphs[0].nodes:
+        node2idx[node] = node_count
+        idx2node.append(node)
+        node_count += 1
+
+    for i in range(1, len(graphs)):
+        add_nodes = list(set(graphs[i].nodes) - set(graphs[i - 1].nodes))
+        for node in add_nodes:
+            node2idx[node] = node_count
+            idx2node.append(node)
+            node_count += 1
+    return node2idx, idx2node
+
+
 def convert_graphs_to_idx(graphs):
     graphs_len = len(graphs)
 
-    print("Start convert graph to index...", end=" ")
+    print("Start convert graph to index ...", end=" ")
     start_time = time()
 
     dfs = []
@@ -78,15 +96,17 @@ def convert_graphs_to_idx(graphs):
         df = nx.to_pandas_edgelist(graphs[i])
         dfs.append(df)
 
-    node2idx = convert_node2idx(graphs[-1])
+    node2idx, idx2node = get_dyn_graph_to_idx(graphs)
 
+    graphs2idx = []
     for i in range(graphs_len):
         dfs[i]['source'] = dfs[i]['source'].apply(lambda x: node2idx[x])
         dfs[i]['target'] = dfs[i]['target'].apply(lambda x: node2idx[x])
-        graphs[i] = nx.from_pandas_edgelist(dfs[i])
+        g = nx.from_pandas_edgelist(dfs[i])
+        graphs2idx.append(g)
 
     print(f"{round(time() - start_time, 2)}s")
-    return graphs
+    return graphs2idx, idx2node
 
 
 def read_dynamic_graph(folder_path=None, limit=None, convert_to_idx=True):
@@ -105,7 +125,7 @@ def read_dynamic_graph(folder_path=None, limit=None, convert_to_idx=True):
         graphs.append(G)
 
     if not convert_to_idx:
-        return graphs
+        return graphs, None
 
     return convert_graphs_to_idx(graphs)
 

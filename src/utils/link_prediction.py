@@ -55,25 +55,25 @@ def get_unconnected_pairs_(G: nx.Graph, k_length=2):
     return unconnected_pairs
 
 
-def run_link_pred_evaluate(data, embedding, alg=None, num_boost_round=10000, early_stopping_rounds=100):
+def run_link_pred_evaluate(graph_df, embedding, alg=None, num_boost_round=10000, early_stopping_rounds=100):
     print("--> Run link predict evaluation ---")
     if alg == "Node2Vec":
-        x = [(embedding[str(i)] + embedding[str(j)]) for i, j in zip(data['node_1'], data['node_2'])]
+        x = [(embedding[str(i)] + embedding[str(j)]) for i, j in zip(graph_df['node_1'], graph_df['node_2'])]
     else:
-        x = [(embedding[i] + embedding[j]) for i, j in zip(data['node_1'], data['node_2'])]
+        x = [(embedding[i] + embedding[j]) for i, j in zip(graph_df['node_1'], graph_df['node_2'])]
 
     # TODO: check unbalance dataset
     X_train, X_test, y_train, y_test = train_test_split(
         np.array(x),
-        data['link'],
+        graph_df['link'],
         test_size=0.25,
         random_state=35,
-        stratify=data['link']
+        stratify=graph_df['link']
     )
     print(
-        f"|Link=1|={list(data['link']).count(1)}\t"
-        f"|Link=0|={list(data['link']).count(0)}\t\t"
-        f"|Percent Link=1/Link=0|={round(list(data['link']).count(1) / list(data['link']).count(0), 4)}"
+        f"|Link=1|={list(graph_df['link']).count(1)}\t"
+        f"|Link=0|={list(graph_df['link']).count(0)}\t\t"
+        f"|Percent Link=1/Link=0|={round(list(graph_df['link']).count(1) / list(graph_df['link']).count(0), 4)}"
     )
 
     train_data = lightgbm.Dataset(X_train, y_train)
@@ -159,8 +159,8 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_p
     temp_time = time()
 
     all_unconnected_pairs = get_unconnected_pairs_(G, k_length=k_length)
-    data = pd.DataFrame(data=all_unconnected_pairs, columns=['node_1', 'node_2'])
-    data['link'] = 0  # add target variable 'link'
+    graph_df = pd.DataFrame(data=all_unconnected_pairs, columns=['node_1', 'node_2'])
+    graph_df['link'] = 0  # add target variable 'link'
     print(f"{round(time() - temp_time)}s")
 
     # Drop some edges which not make graph isolate
@@ -179,7 +179,9 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_p
         if (dropped_node_count / initial_edges_len) >= drop_node_percent:
             break
         G_partial.remove_edge(u, v)
-        if nx.number_connected_components(G_partial) == 1 and G_partial.number_of_nodes() == initial_nodes_len:
+        # TODO: Check connected component
+        # if nx.number_connected_components(G_partial) == 1 and G_partial.number_of_nodes() == initial_nodes_len:
+        if G_partial.number_of_nodes() == initial_nodes_len:
             omissible_links.append({
                 'node_1': u,
                 'node_2': v
@@ -188,20 +190,21 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_p
         else:
             G_partial.add_edge(u, v)
 
-    # create dataframe of removable edges
+    # create data frame of removable edges
     removed_edge_graph_df = pd.DataFrame(data=omissible_links, columns=['node_1', 'node_2'])
     removed_edge_graph_df['link'] = 1  # add the target variable 'link'
     print(f"{round(time() - temp_time)}s")
 
     print("\tCreate data frame have potential links and removed link.")
-    data = data.append(removed_edge_graph_df[['node_1', 'node_2', 'link']], ignore_index=True)
-    data = data.astype(int)
+    graph_df = graph_df.append(removed_edge_graph_df[['node_1', 'node_2', 'link']], ignore_index=True)
+    graph_df = graph_df.astype(int)
 
     print(f"Processed graph in {round(time() - start_time, 2)}s")
-    return data, G_partial
+    return graph_df, G_partial
 
 
 def plot_link_prediction_graph(G: nx.Graph, pred_edges: [], pred_acc=None, idx2node=None):
+    G = G.copy()
     if pred_acc is None:
         pred_acc = []
     pos = nx.spring_layout(G, seed=6)  # positions for all nodes
