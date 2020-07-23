@@ -44,16 +44,56 @@ class TPartCoder(nn.Module):
             x = layer(x)
         return x
 
+    def get_hidden_dims(self):
+        hidden_dims = []
+        for layer in self.layers:
+            if type(layer) == nn.Linear:
+                hidden_dims.append(layer.in_features)
+        return hidden_dims[1:]
+
+    def info(self, show_weights=False):
+        print(f"Number of layers: {len(self.layers)}")
+        for i, layer in enumerate(self.layers):
+            if isinstance(layer, nn.Linear):
+                print(f"Layer {i + 1} \t Shape =({layer.in_features},{layer.out_features})")
+                if show_weights:
+                    print(f"\tWeight= {layer.weight.data} \n\tBias= {layer.bias.data}")
+
 
 class TAutoencoder(nn.Module):
     def __init__(self, input_dim, embedding_dim, hidden_dims=None, l1=0.01, l2=0.01):
         super(TAutoencoder, self).__init__()
+        self.input_dim = input_dim
+        self.embedding_dim = embedding_dim
         self.encoder = TPartCoder(input_dim=input_dim, output_dim=embedding_dim, hidden_dims=hidden_dims)
+        self.encoder.apply(weights_init)
+
         self.decoder = TPartCoder(input_dim=embedding_dim, output_dim=input_dim, hidden_dims=hidden_dims[::-1])
+        self.decoder.apply(weights_init)
 
     def forward(self, x):
         y = self.encoder(x)
         return self.decoder(y)
+
+    def get_hidden_dims(self):
+        '''
+        Suppose encoder part and decoder part have symmetric size. So just return encoder part.
+        Decoder part is reverse of encoder part
+        :param half_model:
+        :return:
+        '''
+        hidden_dims = self.encoder.get_hidden_dims()
+        return hidden_dims
+
+    def info(self, show_weights=False):
+        self.encoder.info(show_weights=show_weights)
+        self.decoder.info(show_weights=show_weights)
+
+
+def weights_init(m):
+    if isinstance(m, nn.Linear):
+        nn.init.xavier_uniform_(m.weight.data)
+        m.bias.data.fill_(0.01)
 
 
 # https://github.com/paulpjoby/DynGEM
@@ -363,9 +403,10 @@ class Autoencoder(Model):
 
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    torch.manual_seed(6)
 
-    num_epochs = 10
-    dataset = torch.randn(10, 3)
+    num_epochs = 1
+    dataset = torch.randn(1, 3)
     dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
     #  create dataset
@@ -390,3 +431,6 @@ if __name__ == "__main__":
             optimizer.step()
         # ===================log========================
         print('epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, num_epochs, loss))
+
+    print(ae.get_hidden_dims())
+    ae.info(show_weights=True)
