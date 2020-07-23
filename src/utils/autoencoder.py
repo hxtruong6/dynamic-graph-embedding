@@ -1,4 +1,5 @@
 import os
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, Dense
@@ -7,6 +8,52 @@ import numpy as np
 import json
 
 from src.utils.net2net import net2wider, net2deeper
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.autograd import Variable
+from torch.utils.data import DataLoader
+
+
+class TPartCoder(nn.Module):
+    def __init__(self, input_dim, output_dim=2, hidden_dims=None, l1=0.01, l2=0.01, seed=6):
+        super(TPartCoder, self).__init__()
+        self.layers = nn.ModuleList()
+        # TODO: add regularization
+        for i in range(len(hidden_dims) + 1):
+            if i == 0:
+                layer = [
+                    nn.Linear(in_features=input_dim, out_features=hidden_dims[i]),
+                    nn.ReLU(),
+                ]
+            elif i == len(hidden_dims):
+                layer = [
+                    nn.Linear(in_features=hidden_dims[i - 1], out_features=output_dim),
+                    nn.ReLU(),
+                ]
+            else:
+                layer = [
+                    nn.Linear(in_features=hidden_dims[i - 1], out_features=hidden_dims[i]),
+                    nn.Sigmoid(),
+                ]
+            self.layers.extend(layer)
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
+
+class TAutoencoder(nn.Module):
+    def __init__(self, input_dim, embedding_dim, hidden_dims=None, l1=0.01, l2=0.01):
+        super(TAutoencoder, self).__init__()
+        self.encoder = TPartCoder(input_dim=input_dim, output_dim=embedding_dim, hidden_dims=hidden_dims)
+        self.decoder = TPartCoder(input_dim=embedding_dim, output_dim=input_dim, hidden_dims=hidden_dims[::-1])
+
+    def forward(self, x):
+        y = self.encoder(x)
+        return self.decoder(y)
 
 
 # https://github.com/paulpjoby/DynGEM
@@ -315,87 +362,31 @@ class Autoencoder(Model):
 
 
 if __name__ == "__main__":
-    # print("\n#######\nEncoder")
-    # # Suppose: 4 -> 3-> 5 -> 2
-    # encoder = PartCoder(output_dim=2, hidden_dims=[3, 5])
-    # x = tf.ones((3, 4))
-    # y = encoder(x)
-    # # print("y=", y)
-    # # encoder.info(show_weight=True, show_config=False)
-    # encoder.deeper()
-    # y = encoder(x)
-    # # print("y=", y)
-    # print("After deeper")
-    # encoder.info(show_weight=True, show_config=False)
-    #
-    # # ----------- Decoder -----------
-    # print("\n####\nDecoder")
-    # # Suppose: 2 -> 5 -> 3 -> 4
-    #
-    # decoder = PartCoder(output_dim=4, hidden_dims=[5, 3])
-    # x = tf.ones((3, 2))
-    # y = decoder(x)
-    # # print("y=", y)
-    # # encoder.info(show_weight=True, show_config=False)
-    # decoder.deeper()
-    # y = decoder(x)
-    # # print("y=", y)
-    # print("After deeper")
-    # decoder.info(show_weight=True, show_config=False)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # print("\n#######\nWider encoder")
-    # # Suppose: 2 -> 3 -> 2
-    # encoder = PartCoder(output_dim=2, hidden_dims=[3, 4, 1])
-    # x = tf.ones((3, 2))
-    #
-    # print("[Original] y=", encoder(x))
-    # encoder.info(show_weight=True, show_config=False)
-    # print("[Original_1] y=", encoder(x))
-    #
-    # encoder.set_dump_weight()
-    # print("[Dump] y=", encoder(x))
-    # encoder.info(show_weight=True, show_config=False)
-    #
-    # encoder.wider(added_size=4)
-    # print("After wider")
-    # print("[Wider] y=", encoder(x))
-    # encoder.info(show_weight=True, show_config=False)
-    #
-    # encoder.deeper()
-    # print("\n###### Deeper ")
-    # print("[Deeper] y=", encoder(x))
-    # encoder.info(show_weight=True, show_config=False)
-    #
-    # encoder.wider()
-    # print("\n##### Wider")
-    # print("[Wider] y=", encoder(x))
-    # encoder.info(show_weight=True, show_config=False)
+    num_epochs = 10
+    dataset = torch.randn(10, 3)
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
-    # ------ Test autoencoder ---------
-    # ae = Autoencoder(input_dim=4, embedding_dim=2, hidden_dims=[3])
-    # X = np.random.rand(1, 4).astype(np.float32)
-    # X_hat, Y = ae(X)
-    # X_ = np.random.rand(5, 4).astype(np.float32)
-    # print(ae.get_embedding(inputs=X_))
+    #  create dataset
 
-    # ---------------- Expand first layer AE -----------
-    ae = Autoencoder(input_dim=4, embedding_dim=2, hidden_dims=[3])
-    X = np.random.rand(1, 4).astype(np.float32)
-    X_hat, Y = ae(X)
+    ae = TAutoencoder(input_dim=3, embedding_dim=2, hidden_dims=[5, 4]).to(device)
 
-    # print("Before expand:")
-    # ae.info(show_weight=True)
+    optimizer = torch.optim.Adam(ae.parameters(), lr=1e-3)
 
-    ae.expand_first_layer(layer_dim=6)
-    X_2 = np.random.rand(1, 6).astype(np.float32)
-    X_hat, Y = ae(X_2)
-    # print("After expand:")
-    # ae.info(show_weight=True)
-    print(ae.get_layers_size())
+    # mean-squared error loss
+    criterion = nn.MSELoss()
 
-    # ------------------ Test wider deeper ------------
-    # ae.info()
-    # print("##### ----> Modify")
-    # ae.wider(added_size=2)
-    # ae.deeper()
-    # ae.info()
+    for epoch in range(num_epochs):
+        for data in dataloader:
+            inp = data
+            inp = Variable(inp).to(device)
+            # ===================forward=====================
+            output = ae(inp)
+            loss = criterion(output, inp)
+            # ===================backward====================
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        # ===================log========================
+        print('epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, num_epochs, loss))
