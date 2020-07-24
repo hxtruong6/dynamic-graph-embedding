@@ -30,12 +30,12 @@ class TPartCoder(nn.Module):
             elif i == len(hidden_dims):
                 layer = [
                     nn.Linear(in_features=hidden_dims[i - 1], out_features=output_dim),
-                    nn.ReLU(),
+                    nn.Sigmoid(),
                 ]
             else:
                 layer = [
                     nn.Linear(in_features=hidden_dims[i - 1], out_features=hidden_dims[i]),
-                    nn.Sigmoid(),
+                    nn.ReLU(),
                 ]
             self.layers.extend(layer)
 
@@ -58,6 +58,21 @@ class TPartCoder(nn.Module):
                 print(f"Layer {i + 1} \t Shape =({layer.in_features},{layer.out_features})")
                 if show_weights:
                     print(f"\tWeight= {layer.weight.data} \n\tBias= {layer.bias.data}")
+
+    def insert_first_layer(self, layer_dim):
+        out_feature = self.layers[0].in_features
+        layer = nn.Linear(in_features=layer_dim, out_features=out_feature).apply(weights_init)
+        self.layers.insert(0, nn.ReLU)
+        self.layers.insert(0, layer)
+
+    def insert_last_layer(self, layer_dim):
+        in_feature = self.layers[-2].out_features  # self.layers[-1] is Sigmoid activation
+        layer = [
+            nn.Linear(in_features=in_feature, out_features=layer_dim).apply(weights_init),
+            nn.Sigmoid()
+        ]
+        self.layers[-1] = nn.ReLU()
+        self.layers.extend(layer)
 
 
 class TAutoencoder(nn.Module):
@@ -88,6 +103,10 @@ class TAutoencoder(nn.Module):
     def info(self, show_weights=False):
         self.encoder.info(show_weights=show_weights)
         self.decoder.info(show_weights=show_weights)
+
+    def expand_first_layer(self, layer_dim):
+        self.encoder.insert_first_layer(layer_dim=layer_dim)
+        self.decoder.insert_last_layer(layer_dim=layer_dim)
 
 
 def weights_init(m):
@@ -411,7 +430,7 @@ if __name__ == "__main__":
 
     #  create dataset
 
-    ae = TAutoencoder(input_dim=3, embedding_dim=2, hidden_dims=[5, 4]).to(device)
+    ae = TAutoencoder(input_dim=3, embedding_dim=2, hidden_dims=[4]).to(device)
 
     optimizer = torch.optim.Adam(ae.parameters(), lr=1e-3)
 
@@ -434,3 +453,9 @@ if __name__ == "__main__":
 
     print(ae.get_hidden_dims())
     ae.info(show_weights=True)
+
+    print("\nExpand autoencoder")
+    ae.expand_first_layer(layer_dim=6)
+    # ae.info(show_weights=True)
+    # summary(ae, input_size=(1, 6))
+    print(ae)
