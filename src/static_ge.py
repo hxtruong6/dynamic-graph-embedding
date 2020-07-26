@@ -2,11 +2,18 @@ import tensorflow as tf
 import networkx as nx
 import numpy as np
 import scipy.sparse as sparse
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.autograd import Variable
+from torch.utils.data import DataLoader
 
+from src.data_preprocessing.graph_dataset import GraphDataset
 from src.data_preprocessing.graph_preprocessing import next_datasets, get_graph_from_file
-from src.utils.autoencoder import Autoencoder
+from src.utils.autoencoder import Autoencoder, TAutoencoder
+from src.utils.graph_util import draw_graph, print_graph_stats
 from src.utils.model_utils import save_custom_model
-from src.utils.visualize import plot_losses, plot_embeddings_with_labels
+from src.utils.visualize import plot_losses, plot_embeddings_with_labels, plot_embedding
 
 
 class StaticGE(object):
@@ -136,22 +143,93 @@ class StaticGE(object):
     #     self.model = tf.keras.models.load_model(filepath)
 
 
-if __name__ == "__main__":
-    # G_tmp = get_graph_from_file(filename="../data/ca-AstroPh.txt")
-    # S = nx.adj_matrix(G_tmp).todense()[:1000, :1000]
-    # S = np.array([
-    #     [0, 2, 0, 4, 5],
-    #     [2, 0, 1, 0, 6],
-    #     [0, 1, 0, 0, 0],
-    #     [4, 0, 0, 0, 0],
-    #     [5, 6, 0, 0, 0]
-    # ])
-    # G = nx.from_numpy_matrix(S, create_using=nx.Graph)
+class TStaticGE(object):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    def __init__(self, G, embedding_dim=None, hidden_dims=[], model: TAutoencoder = None, alpha=0.01, beta=2, nu1=0.001,
+                 nu2=0.001):
+        super(TStaticGE, self).__init__()
+        self.G = nx.Graph(G)
+        self.alpha = alpha
+        self.beta = beta
+        self.l1 = nu1
+        self.l2 = nu2
+
+        if model is None:
+            self.embedding_dim = embedding_dim
+            self.hidden_dims = hidden_dims
+            self.input_dim = self.G.number_of_nodes()
+            self.model = TAutoencoder(
+                input_dim=self.input_dim,
+                embedding_dim=self.embedding_dim,
+                hidden_dims=self.hidden_dims,
+                l1=nu1,
+                l2=nu2
+            )
+        else:
+            self.model = model
+
+        self.A: sparse.csr_matrix
+        self.L: sparse.csr_matrix
+        self.A, self.L = self._create_A_L_matrix()
+
+    def _create_A_L_matrix(self):
+        A = nx.to_scipy_sparse_matrix(self.G, format='csr').astype(np.float32)
+        D = sparse.diags(A.sum(axis=1).flatten().tolist()[0]).astype(np.float32)
+        L = D - A
+        return A, L
+
+    def train(self, batch_size=1, shuffle=False, epochs=1, learning_rate=1e-3, skip_print=5, save_model_point=50,
+              model_folder_path=None):
+        # TODO: set seed through parameter
+        torch.manual_seed(6)
+        graph_dataset = GraphDataset(A=self.A, L=self.L)
+        dataloader = DataLoader(graph_dataset, batch_size=batch_size, shuffle=shuffle)
+
+        self.model = self.model.to(self.device)
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
+
+        # mean-squared error loss
+        criterion = nn.MSELoss()
+        print(self.model)
+        for epoch in range(epochs):
+            for data in dataloader:
+                A, L = data
+                inp = Variable(A).to(self.device)
+                # ===================forward=====================
+                x_hat, y = self.model(inp)
+                loss = criterion(x_hat, inp)
+                # ===================backward====================
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+            # ===================log========================
+            print('epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, epochs, loss))
+
+    def get_embedding(self, x=None):
+        '''
+
+        :param x: graph input. Must have same dimension with the original graph
+        :return:
+        '''
+        if x is None:
+            x = self.A.todense()
+        # Convert to tensor for pytorch
+        x = torch.tensor(x)
+        embedding = self.model.get_embedding(x=x)
+        return embedding
+
+
+if __name__ == "__main__":
     G = get_graph_from_file(filename="../data/email-eu/email-Eu-core.txt")
-    ge = StaticGE(G=G, embedding_dim=3, hidden_dims=[64, 32])
-    ge.train(batch_size=64, epochs=300, skip_print=10, learning_rate=0.001)
+    # G = nx.gnm_random_graph(n=70, m=150, seed=6)
+    print_graph_stats(G)
+    draw_graph(G)
+
+    ge = TStaticGE(G=G, embedding_dim=4, hidden_dims=[32, 16])
+    ge.train(batch_size=5, epochs=10, skip_print=10, learning_rate=0.001)
     embeddings = ge.get_embedding()
     # classify_embeddings_evaluate(embeddings, label_file="../data/email-eu/email-Eu-core-department-labels.txt")
     plot_embeddings_with_labels(G, embeddings=embeddings,
                                 path_file="../data/email-eu/email-Eu-core-department-labels.txt")
+    plot_embedding(embeddings=embeddings)

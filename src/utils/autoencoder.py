@@ -88,7 +88,11 @@ class TAutoencoder(nn.Module):
 
     def forward(self, x):
         y = self.encoder(x)
-        return self.decoder(y)
+        return self.decoder(y), y
+
+    def get_embedding(self, x):
+        embedding = self.encoder(x)
+        return embedding.detach().numpy()
 
     def get_hidden_dims(self):
         '''
@@ -107,6 +111,9 @@ class TAutoencoder(nn.Module):
     def expand_first_layer(self, layer_dim):
         self.encoder.insert_first_layer(layer_dim=layer_dim)
         self.decoder.insert_last_layer(layer_dim=layer_dim)
+
+    def get_embedding_dim(self):
+        return self.embedding_dim
 
 
 def weights_init(m):
@@ -360,6 +367,7 @@ class Autoencoder(Model):
         return X_hat, Y
 
     def get_embedding(self, inputs):
+        print(inputs)
         return self.encoder(inputs)
 
     def get_reconstruction(self, inputs):
@@ -425,8 +433,8 @@ if __name__ == "__main__":
     torch.manual_seed(6)
 
     num_epochs = 1
-    dataset = torch.randn(1, 3)
-    dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
+    dataset = torch.randn(5, 3)
+    dataloader = DataLoader(dataset, batch_size=2, shuffle=False)
 
     #  create dataset
 
@@ -440,9 +448,10 @@ if __name__ == "__main__":
     for epoch in range(num_epochs):
         for data in dataloader:
             inp = data
+            print(inp)
             inp = Variable(inp).to(device)
             # ===================forward=====================
-            output = ae(inp)
+            output, embed_out = ae(inp)
             loss = criterion(output, inp)
             # ===================backward====================
             optimizer.zero_grad()
@@ -456,6 +465,5 @@ if __name__ == "__main__":
 
     print("\nExpand autoencoder")
     ae.expand_first_layer(layer_dim=6)
-    # ae.info(show_weights=True)
-    # summary(ae, input_size=(1, 6))
+    ae.info(show_weights=True)
     print(ae)

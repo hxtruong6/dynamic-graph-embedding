@@ -47,7 +47,7 @@ def idx_to_graph(g: nx.Graph, idx2node: {}):
     return original_graph
 
 
-def draw_graph(g: nx.Graph, seed=6, pos=None, idx2node=None, limit_node=None):
+def draw_graph(g: nx.Graph, seed=6, pos=None, idx2node=None, limit_node=100):
     g = g.copy()
     if limit_node is not None:
         g.remove_nodes_from(nodes=list(g.nodes)[limit_node:])

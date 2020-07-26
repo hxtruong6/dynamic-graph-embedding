@@ -46,8 +46,8 @@ def plot_losses(losses, title=None, x_label=None, y_label=None):
     plt.show()
 
 
-def plot_embedding(embedding):
-    X_embedded = TSNE(n_components=2).fit_transform(embedding)
+def plot_embedding(embeddings):
+    X_embedded = TSNE(n_components=2).fit_transform(embeddings)
     plt.scatter(X_embedded[:, 0], X_embedded[:, 1])
     plt.show()
 
