@@ -28,9 +28,6 @@ class GraphDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        A = self.A
-        L = self.L
-        # A_train = self.A[idx, :].todense().tolist()
         A_train = list(self.A.getrow(idx).todense().flat)
         L_train = list(self.L[idx][:, idx].todense().flat)
 

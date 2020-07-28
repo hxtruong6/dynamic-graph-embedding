@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
-
+import networkx as nx
 from src.data_preprocessing.graph_preprocessing import read_node_label
+from src.utils.graph_util import draw_graph
 
 
 def plot_embeddings_with_labels(graph, embeddings, path_file=None):
@@ -51,4 +52,8 @@ def plot_embedding(embeddings):
     plt.scatter(X_embedded[:, 0], X_embedded[:, 1])
     plt.show()
 
-# plot_embeded([0])
+
+def plot_reconstruct_graph(reconstructed_graph, threshold=0.5, pos=None):
+    g = np.zeros_like(reconstructed_graph)
+    g[reconstructed_graph >= threshold] = 1.0
+    draw_graph(g=nx.from_numpy_array(g), pos=pos)

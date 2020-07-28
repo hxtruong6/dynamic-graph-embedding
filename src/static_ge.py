@@ -13,7 +13,7 @@ from src.data_preprocessing.graph_preprocessing import next_datasets, get_graph_
 from src.utils.autoencoder import Autoencoder, TAutoencoder
 from src.utils.graph_util import draw_graph, print_graph_stats
 from src.utils.model_utils import save_custom_model
-from src.utils.visualize import plot_losses, plot_embeddings_with_labels, plot_embedding
+from src.utils.visualize import plot_losses, plot_embeddings_with_labels, plot_embedding, plot_reconstruct_graph
 
 
 class StaticGE(object):
@@ -52,8 +52,9 @@ class StaticGE(object):
 
         def loss_1st(Y, L):
             # 2 * tr(Y^T * L * Y)
+            Y_ = tf.linalg.matmul(tf.transpose(Y), L)
             return 2 * tf.linalg.trace(
-                tf.linalg.matmul(tf.linalg.matmul(tf.transpose(Y), L), Y)
+                tf.linalg.matmul(Y_, Y)
             )
 
         def loss_2nd(X_hat, X, beta):
@@ -179,32 +180,53 @@ class TStaticGE(object):
         L = D - A
         return A, L
 
-    def train(self, batch_size=1, shuffle=False, epochs=1, learning_rate=1e-3, skip_print=5, save_model_point=50,
+    def _compute_loss(self, x, x_hat, y, L):
+        def loss_1st(Y, L):
+            Y_ = torch.matmul(torch.transpose(Y, 0, 1), L)
+            return 2 * torch.trace(torch.matmul(Y_, Y))
+
+        def loss_2nd(X_hat, X, beta):
+            B = np.ones_like(X)
+            B[X != 0] = beta
+            return torch.sum(torch.square((X_hat - X) * torch.tensor(B)))
+
+        batch_size = x.shape[0]
+        # TODO: check if divide batch_size
+        loss_1 = loss_1st(y, L)
+        loss_2 = loss_2nd(x_hat, x, self.beta) / batch_size
+        loss = loss_2 + self.alpha * loss_1
+        return loss
+
+    def train(self, batch_size=1, epochs=1, learning_rate=1e-3, skip_print=5, save_model_point=50,
               model_folder_path=None):
         # TODO: set seed through parameter
         torch.manual_seed(6)
-        graph_dataset = GraphDataset(A=self.A, L=self.L)
-        dataloader = DataLoader(graph_dataset, batch_size=batch_size, shuffle=shuffle)
+        # graph_dataset = GraphDataset(A=self.A, L=self.L)
+        # dataloader = DataLoader(graph_dataset, batch_size=batch_size, shuffle=False, sampler=)
 
         self.model = self.model.to(self.device)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
 
-        # mean-squared error loss
-        criterion = nn.MSELoss()
-        print(self.model)
         for epoch in range(epochs):
-            for data in dataloader:
-                A, L = data
-                inp = Variable(A).to(self.device)
+            # for data in dataloader:
+            loss = None
+            for step, batch_inp in next_datasets(self.A, self.L, batch_size=batch_size):
+                A, L = batch_inp
+                A = torch.tensor(A)
+                L = torch.tensor(L)
+
+                x = Variable(A).to(self.device)
                 # ===================forward=====================
-                x_hat, y = self.model(inp)
-                loss = criterion(x_hat, inp)
+                x_hat, y = self.model(x)
+                # loss = criterion(x_hat, x)
+                loss = self._compute_loss(x, x_hat, y, L)
                 # ===================backward====================
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
             # ===================log========================
-            print('epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, epochs, loss))
+            if (epoch + 1) % skip_print == 0 or epoch == epochs - 1 or epoch == 0:
+                print('epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, epochs, loss))
 
     def get_embedding(self, x=None):
         '''
@@ -219,17 +241,26 @@ class TStaticGE(object):
         embedding = self.model.get_embedding(x=x)
         return embedding
 
+    def get_reconstruction(self):
+        x = torch.tensor(self.A.todense())
+        return self.model.get_reconstruction(x=x)
+
 
 if __name__ == "__main__":
-    G = get_graph_from_file(filename="../data/email-eu/email-Eu-core.txt")
-    # G = nx.gnm_random_graph(n=70, m=150, seed=6)
+    # G = get_graph_from_file(filename="../data/email-eu/email-Eu-core.txt")
+    G = nx.gnm_random_graph(n=11, m=15, seed=6)
     print_graph_stats(G)
     draw_graph(G)
+    pos = nx.spring_layout(G, seed=6)
 
-    ge = TStaticGE(G=G, embedding_dim=4, hidden_dims=[32, 16])
-    ge.train(batch_size=5, epochs=10, skip_print=10, learning_rate=0.001)
+    ge = TStaticGE(G=G, embedding_dim=2, hidden_dims=[8, 4])
+    # ge = StaticGE(G=G, embedding_dim=2, hidden_dims=[8, 4])
+    ge.train(batch_size=3, epochs=2000, skip_print=100, learning_rate=0.003)
     embeddings = ge.get_embedding()
+    reconstructed_graph = ge.get_reconstruction()
     # classify_embeddings_evaluate(embeddings, label_file="../data/email-eu/email-Eu-core-department-labels.txt")
-    plot_embeddings_with_labels(G, embeddings=embeddings,
-                                path_file="../data/email-eu/email-Eu-core-department-labels.txt")
-    plot_embedding(embeddings=embeddings)
+    # plot_embeddings_with_labels(G, embeddings=embeddings,
+    #                             path_file="../data/email-eu/email-Eu-core-department-labels.txt")
+
+    # plot_embedding(embeddings=embeddings)
+    plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0.6)

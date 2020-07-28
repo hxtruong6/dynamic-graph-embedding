@@ -94,6 +94,10 @@ class TAutoencoder(nn.Module):
         embedding = self.encoder(x)
         return embedding.detach().numpy()
 
+    def get_reconstruction(self, x):
+        reconstruction = self.decoder(self.encoder(x))
+        return reconstruction.detach().numpy()
+
     def get_hidden_dims(self):
         '''
         Suppose encoder part and decoder part have symmetric size. So just return encoder part.
