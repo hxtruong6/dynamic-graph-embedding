@@ -1,26 +1,28 @@
-from os.path import join
+from os.path import join, exists
 import os
 from time import time
 import networkx as nx
+import torch
+from torch.autograd import Variable
 
 from src.data_preprocessing.graph_preprocessing import read_dynamic_graph
-from src.static_ge import StaticGE
-from src.utils.autoencoder import Autoencoder
+from src.static_ge import TStaticGE
+from src.utils.autoencoder import TAutoencoder
 from src.utils.model_utils import get_hidden_layer, handle_expand_model, save_custom_model, load_custom_model
 from src.utils.visualize import plot_embedding
 
 
-class DynGE(object):
-    def __init__(self, graphs, embedding_dim, v1=0.001, v2=0.001):
-        super(DynGE, self).__init__()
+class TDynGE(object):
+    def __init__(self, graphs, embedding_dim, l1=0.001, l2=0.001):
+        super(TDynGE, self).__init__()
         if not graphs:
             raise ValueError("Must be provide graphs data")
 
         self.graphs = graphs
         self.graph_len = len(graphs)
         self.embedding_dim = embedding_dim
-        self.v1 = v1
-        self.v2 = v2
+        self.l1 = l1
+        self.l2 = l2
         self.static_ges = []
         self.model_folder_paths = []
 
@@ -32,58 +34,56 @@ class DynGE(object):
             raise ValueError("index is invalid!")
         return self.static_ges[index].get_embedding()
 
-    def train(self, prop_size=0.4, batch_size=64, epochs=100, filepath="../models/generate/", skip_print=5,
-              net2net_applied=False, learning_rate=0.001, save_model_point=None):
-        init_hidden_dims = get_hidden_layer(prop_size=prop_size, input_dim=len(self.graphs[0].nodes()),
-                                            embedding_dim=self.embedding_dim)
-        model = Autoencoder(
-            input_dim=len(self.graphs[0].nodes()),
-            embedding_dim=self.embedding_dim,
-            hidden_dims=init_hidden_dims,
-            v1=self.v1,
-            v2=self.v2
-        )
-        ge = StaticGE(G=self.graphs[0], model=model)
+    def train(self, prop_size=0.4, batch_size=64, epochs=100, folder_path="../models/generate/", skip_print=5,
+              net2net_applied=False, learning_rate=0.001, save_model_point=None, from_loaded_model=False):
+        if not from_loaded_model:
+            init_hidden_dims = get_hidden_layer(prop_size=prop_size, input_dim=len(self.graphs[0].nodes()),
+                                                embedding_dim=self.embedding_dim)
+            if not exists(folder_path):
+                os.makedirs(folder_path)
 
-        self.model_folder_paths.append({
-            "folder_path": join(filepath, "graph_0"),
-            "name": "graph_0"
-        })
-
-        print(f"--- Training graph {0} ---")
-        start_time = time()
-        ge.train(batch_size=batch_size, epochs=epochs, skip_print=skip_print, learning_rate=learning_rate,
-                 save_model_point=save_model_point, model_folder_path=self.model_folder_paths[0])
-        print(f"Training time in {round(time() - start_time, 2)}s")
-
-        # model.info(show_config=True)
-        self.static_ges.append(ge)
-        save_custom_model(model=model, model_folder_path=self.model_folder_paths[0])
-
-        for i in range(1, len(self.graphs)):
-            graph = nx.Graph(self.graphs[i])
-            input_dim = len(graph.nodes())
-            prev_model = self._create_prev_model(index=i - 1)
-            curr_model = handle_expand_model(model=prev_model, input_dim=input_dim,
-                                             prop_size=prop_size, net2net_applied=net2net_applied)
-            ge = StaticGE(G=graph, model=curr_model)
-            self.model_folder_paths.append({
-                "folder_path": join(filepath, f"graph_{i}"),
-                "name": f"graph_{i}"
-            })
-
-            print(f"--- Training graph {i} ---")
+            model = TAutoencoder(
+                input_dim=len(self.graphs[0].nodes()),
+                embedding_dim=self.embedding_dim,
+                hidden_dims=init_hidden_dims,
+                l1=self.l1,
+                l2=self.l2
+            )
+            ge = TStaticGE(G=self.graphs[0], model=model)
+            print(f"--- Training graph {0} ---")
             start_time = time()
-            ge.train(batch_size=batch_size, epochs=epochs, skip_print=skip_print, learning_rate=learning_rate,
-                     save_model_point=save_model_point, model_folder_path=self.model_folder_paths[i])
+            ge.train(batch_size=batch_size, epochs=epochs, skip_print=skip_print, learning_rate=learning_rate)
             print(f"Training time in {round(time() - start_time, 2)}s")
 
             self.static_ges.append(ge)
-            save_custom_model(model=ge.get_model(), model_folder_path=self.model_folder_paths[i])
+            save_custom_model(model=model, filepath=join(folder_path, "graph_0"))
 
-    def _create_prev_model(self, index):
-        model = load_custom_model(self.model_folder_paths[index])
-        return model
+            for i in range(1, len(self.graphs)):
+                graph = nx.Graph(self.graphs[i])
+                input_dim = len(graph.nodes())
+                prev_model = load_custom_model(filepath=join(folder_path, f"graph_{i - 1}"))
+                curr_model = handle_expand_model(model=prev_model, input_dim=input_dim,
+                                                 prop_size=prop_size, net2net_applied=net2net_applied)
+
+                ge = TStaticGE(G=graph, model=curr_model)
+
+                print(f"--- Training graph {i} ---")
+                start_time = time()
+                ge.train(batch_size=batch_size, epochs=epochs, skip_print=skip_print, learning_rate=learning_rate)
+                print(f"Training time in {round(time() - start_time, 2)}s")
+
+                self.static_ges.append(ge)
+                save_custom_model(model=curr_model, filepath=join(folder_path, f"graph_{i}"))
+        else:
+            for i in range(len(self.graphs)):
+                print(f"--- Training graph {i} ---")
+                start_time = time()
+
+                self.static_ges[i].train(batch_size=batch_size, epochs=epochs, skip_print=skip_print,
+                                         learning_rate=learning_rate)
+                print(f"Training time in {round(time() - start_time, 2)}s")
+
+                save_custom_model(model=self.static_ges[i].get_model(), filepath=join(folder_path, f"graph_{i}"))
 
     def load_models(self, folder_path):
         print("Loading models...", end=" ")
@@ -91,51 +91,32 @@ class DynGE(object):
         model_folders_paths = os.listdir(folder_path)
         self.model_folder_paths = []
         self.static_ges = []
-        for i, folder in enumerate(model_folders_paths):
-            model_folder_path = {
-                'folder_path': join(folder_path, folder),
-                'name': folder
-            }
-            model = load_custom_model(model_folder_path=model_folder_path)
-            self.model_folder_paths.append(model_folder_path)
+        for i in range(len(self.graphs)):
+            filepath = join(folder_path, f"graph_{i}")
+            model = load_custom_model(filepath=filepath)
 
-            ge = StaticGE(G=self.graphs[i], model=model)
+            ge = TStaticGE(G=self.graphs[i], model=model)
             self.static_ges.append(ge)
         print(f"{round(time() - start_time, 2)}s")
 
-    def train_from_checkpoint(self, folder_path, batch_size=64, epochs=10, skip_print=10, learning_rate=0.001,
-                              filepath=None):
-        self.load_models(folder_path=folder_path)
-        if filepath is None:
-            filepath = folder_path
-
-        for i in range(self.graph_len):
-            self.static_ges[i].train(batch_size=batch_size, epochs=epochs, skip_print=skip_print,
-                                     learning_rate=learning_rate)
-
-            model_folder_path = {
-                "folder_path": join(filepath, f"graph_{i}"),
-                "name": f"graph_{i}"
-            }
-            save_custom_model(model=self.static_ges[i].get_model(), model_folder_path=model_folder_path)
-
 
 if __name__ == "__main__":
-    g1 = nx.gnm_random_graph(n=300, m=900, seed=6)
-    g2 = nx.gnm_random_graph(n=600, m=2000, seed=6)
-    g3 = nx.gnm_random_graph(n=900, m=3500, seed=6)
-    graphs = [g1, g1, g1]
+    g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
+    g2 = nx.gnm_random_graph(n=15, m=40, seed=6)
+    g3 = nx.gnm_random_graph(n=20, m=50, seed=6)
+    graphs = [g1, g2, g3]
 
-    graphs, _ = read_dynamic_graph(folder_path="../data/fb", convert_to_idx=True, limit=1)
+    # graphs, _ = read_dynamic_graph(folder_path="../data/fb", convert_to_idx=True, limit=1)
 
-    dy_ge = DynGE(graphs=graphs, embedding_dim=4)
-    # dy_ge.train(prop_size=0.4, epochs=1, skip_print=30, net2net_applied=False, learning_rate=0.0005,
-    #             filepath="../models/generate/", save_model_point=None)
-    dy_ge.load_models(folder_path="../models/generate")
-    # dy_ge.train_from_checkpoint(folder_path="../models/generate/", filepath="../models/checkpoints_1", epochs=200,
-    #                             skip_print=20, learning_rate=0.00005)
+    dy_ge = TDynGE(graphs=graphs, embedding_dim=4)
+    # dy_ge.load_models(folder_path="../models/generate")
+    # dy_ge.train(prop_size=0.4, epochs=10, skip_print=2, net2net_applied=False, learning_rate=0.0005,
+    #             folder_path="../models/generate/", save_model_point=None, from_loaded_model=True)
 
-    print("Show embedding")
-    # embeddings = dy_ge.get_all_embeddings()
-    # for e in embeddings:
-    #     plot_embedding(embedding=e)
+    dy_ge.train(prop_size=0.4, epochs=10, skip_print=2, net2net_applied=False, learning_rate=0.003,
+                folder_path="../models/generate/", save_model_point=None, from_loaded_model=False)
+
+    print("Show embedding:")
+    embeddings_list = dy_ge.get_all_embeddings()
+    for e in embeddings_list:
+        plot_embedding(embeddings=e)

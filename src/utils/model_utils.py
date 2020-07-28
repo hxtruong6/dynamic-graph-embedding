@@ -4,7 +4,9 @@ import os
 from math import ceil
 import numpy as np
 import pandas as pd
-from src.utils.autoencoder import Autoencoder
+import torch
+
+from src.utils.autoencoder import TAutoencoder
 
 
 def get_hidden_layer(prop_size, input_dim, embedding_dim):
@@ -13,10 +15,12 @@ def get_hidden_layer(prop_size, input_dim, embedding_dim):
         hidden_dims.append(ceil(hidden_dims[-1] * prop_size))
 
     del hidden_dims[0]
+    if len(hidden_dims) == 0:
+        hidden_dims.append(int((input_dim - embedding_dim) / 2 + embedding_dim))
     return hidden_dims
 
 
-def handle_expand_model(model: Autoencoder, input_dim, net2net_applied=False, prop_size=0.3):
+def handle_expand_model(model: TAutoencoder, input_dim, net2net_applied=False, prop_size=0.3):
     if input_dim == model.get_input_dim():
         return model
 
@@ -46,49 +50,51 @@ def handle_expand_model(model: Autoencoder, input_dim, net2net_applied=False, pr
     return model
 
 
-def save_custom_model(model: Autoencoder, model_folder_path, checkpoint=None, compress=True):
-    folder_path, name = model_folder_path['folder_path'], model_folder_path['name']
-    if checkpoint is not None:
-        if folder_path[-1] == '/':
-            folder_path = folder_path[:-1]
-
-        r_pos = folder_path.rfind('/')
-        begin_folder_path = folder_path[:r_pos] + "__ck_" + str(checkpoint)
-        if not exists(begin_folder_path):
-            os.makedirs(begin_folder_path)
-
-        folder_path = begin_folder_path + folder_path[r_pos:]
-
-    if not exists(folder_path):
-        os.makedirs(folder_path)
+def save_custom_model(model: TAutoencoder, filepath, checkpoint=None, compress=True):
+    # if checkpoint is not None:
+    #     if folder_path[-1] == '/':
+    #         folder_path = folder_path[:-1]
+    #
+    #     r_pos = folder_path.rfind('/')
+    #     begin_folder_path = folder_path[:r_pos] + "__ck_" + str(checkpoint)
+    #     if not exists(begin_folder_path):
+    #         os.makedirs(begin_folder_path)
+    #
+    #     folder_path = begin_folder_path + folder_path[r_pos:]
+    #
+    # if not exists(folder_fpath):
+    #     os.makedirs(folder_path)
 
     # TODO: how to use save_weights
     # model.save_weights(join(folder_path, name))
-    save_weights_model(weights=model.get_weights_model(), filepath=join(folder_path, name + '_weights.json'),
-                       compress=compress)
+    # save_weights_model(weights=model.get_weights_model(), filepath=join(folder_path, name + '_weights.json'),
+    #                    compress=compress)
+    model_path = filepath + ".pt"
+    torch.save(model.state_dict(), model_path)
 
     config_layer = model.get_config_layer()
-    with open(join(folder_path, name + '.json'), 'w') as fi:
-        json.dump(config_layer, fi)
+    config_path = filepath + ".json"
+    with open(config_path, 'w') as fi:
+        json.dump(config_layer, fi, indent=2)
 
 
-def load_custom_model(model_folder_path):
-    folder_path, name = model_folder_path['folder_path'], model_folder_path['name']
-    with open(join(folder_path, name + '.json')) as fo:
+def load_custom_model(filepath):
+    # folder_path, name = model_folder_path['folder_path'], model_folder_path['name']
+    config_path = filepath + ".json"
+    with open(config_path) as fo:
         config_layer = json.load(fo)
 
-    model = Autoencoder(
+    model = TAutoencoder(
         input_dim=config_layer['input_dim'],
         embedding_dim=config_layer['embedding_dim'],
         hidden_dims=config_layer['hidden_dims'],
-        v1=config_layer['l1'],
-        v2=config_layer['l2']
+        l1=config_layer['l1'],
+        l2=config_layer['l2']
     )
-    # TODO: check model load_weight
-    # model.load_weights(join(folder_path, name))
-    weights = load_weights_model(filepath=join(folder_path, name + '_weights.json'))
-    model.set_weights_model(weights=weights)
-
+    
+    model_path = filepath + ".pt"
+    model.load_state_dict(torch.load(model_path))
+    model.eval()
     return model
 
 

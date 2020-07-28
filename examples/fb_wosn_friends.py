@@ -130,7 +130,7 @@ if __name__ == "__main__":
         start_time = time()
         dy_ge.train(prop_size=0.3, epochs=epochs, skip_print=skip_print, net2net_applied=False,
                     learning_rate=0.0001,
-                    batch_size=batch_size, filepath=weight_model_folder, save_model_point=None)
+                    batch_size=batch_size, folder_path=weight_model_folder, save_model_point=None)
         print(f"Finish total training: {round(time() - start_time, 2)}s\n--------------\n")
 
     dy_embeddings = dy_ge.get_all_embeddings()
