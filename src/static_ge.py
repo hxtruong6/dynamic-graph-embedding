@@ -22,10 +22,11 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class TStaticGE(object):
-    def __init__(self, G: nx.Graph, embedding_dim=None, hidden_dims=[], model: TAutoencoder = None, alpha=0.01, beta=2,
-                 l1=0.0,
-                 l2=0.0):
+    def __init__(self, G: nx.Graph, embedding_dim=None, hidden_dims=None, model: TAutoencoder = None,
+                 alpha=0.01, beta=2, l1=0.0, l2=0.0):
         super(TStaticGE, self).__init__()
+        if hidden_dims is None:
+            hidden_dims = []
         self.G = G
         # TODO: set alpha beta in If statement
         self.alpha = alpha
@@ -158,7 +159,7 @@ if __name__ == "__main__":
     draw_graph(G)
     pos = nx.spring_layout(G, seed=6)
 
-    ge = TStaticGE(G=G, embedding_dim=2, hidden_dims=[8, 4], l2=0.01, alpha=0.1, beta=2)
+    ge = TStaticGE(G=G, embedding_dim=2, hidden_dims=[8, 4], l2=1e-5, alpha=0.1, beta=2)
     # ge = StaticGE(G=G, embedding_dim=2, hidden_dims=[8, 4])
     start_time = time()
     ge.train(batch_size=3, epochs=3000, skip_print=50, learning_rate=0.003, early_stop=100, threshold_loss=1e-4)
