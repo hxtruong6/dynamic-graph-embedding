@@ -8,12 +8,12 @@ import scipy.sparse as sparse
 import torch
 from torch.autograd import Variable
 
-from src.data_preprocessing.graph_preprocessing import next_datasets
+from src.data_preprocessing.graph_preprocessing import next_datasets, get_graph_from_file
 from src.utils.autoencoder import TAutoencoder
 from src.utils.checkpoint_config import CheckpointConfig
 from src.utils.graph_util import draw_graph, print_graph_stats
 from src.utils.model_utils import save_custom_model
-from src.utils.visualize import plot_reconstruct_graph
+from src.utils.visualize import plot_reconstruct_graph, plot_embeddings_with_labels
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -153,22 +153,22 @@ class TStaticGE(object):
 
 
 if __name__ == "__main__":
-    # G = get_graph_from_file(filename="../data/email-eu/email-Eu-core.txt")
-    G = nx.gnm_random_graph(n=11, m=15, seed=6)
+    G = get_graph_from_file(filename="../data/email-eu/email-Eu-core.txt")
+    # G = nx.gnm_random_graph(n=11, m=15, seed=6)
     print_graph_stats(G)
-    draw_graph(G)
+    draw_graph(G, limit_node=50)
     pos = nx.spring_layout(G, seed=6)
 
-    ge = TStaticGE(G=G, embedding_dim=2, hidden_dims=[8, 4], l2=1e-5, alpha=0.1, beta=2)
+    ge = TStaticGE(G=G, embedding_dim=2, hidden_dims=[8, 4], l2=1e-5, alpha=0.01, beta=2)
     # ge = StaticGE(G=G, embedding_dim=2, hidden_dims=[8, 4])
     start_time = time()
-    ge.train(batch_size=3, epochs=3000, skip_print=50, learning_rate=0.003, early_stop=100, threshold_loss=1e-4)
+    ge.train(batch_size=3, epochs=3000, skip_print=1, learning_rate=0.003, early_stop=100, threshold_loss=1e-4)
     print(f"Finished in {round(time() - start_time, 2)}s")
     embeddings = ge.get_embedding()
     reconstructed_graph = ge.get_reconstruction()
     # classify_embeddings_evaluate(embeddings, label_file="../data/email-eu/email-Eu-core-department-labels.txt")
-    # plot_embeddings_with_labels(G, embeddings=embeddings,
-    #                             path_file="../data/email-eu/email-Eu-core-department-labels.txt")
+    plot_embeddings_with_labels(G, embeddings=embeddings,
+                                path_file="../data/email-eu/email-Eu-core-department-labels.txt")
 
     # plot_embedding(embeddings=embeddings)
-    plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0.6)
+    # plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0.6)
