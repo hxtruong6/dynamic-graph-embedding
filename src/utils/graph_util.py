@@ -2,8 +2,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 
-def print_graph_stats(G: nx.Graph, name=""):
-    print(f"Graph {name}: |V|={G.number_of_nodes()}\t |E|={G.number_of_edges()}")
+def print_graph_stats(G: nx.Graph, name="", end="\n"):
+    print(f"Graph {name}: |V|={G.number_of_nodes()}\t |E|={G.number_of_edges()}", end=end)
 
 
 def preprocess_graph(graph):

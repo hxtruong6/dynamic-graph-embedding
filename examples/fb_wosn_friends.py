@@ -56,9 +56,11 @@ if __name__ == "__main__":
     def train_model():
         print("\n-----------\nStart total training...")
         start_time_train = time()
-        dy_ge.train(prop_size=prop_size, epochs=epochs, skip_print=skip_print, net2net_applied=net2net_applied,
-                    learning_rate=learning_rate, batch_size=batch_size, folder_path=weight_model_folder,
-                    checkpoint_config=checkpoint_config, from_loaded_model=train_from_loaded_model)
+        dy_ge.train(prop_size=prop_size, epochs=epochs, skip_print=skip_print,
+                    net2net_applied=net2net_applied, learning_rate=learning_rate,
+                    batch_size=batch_size, folder_path=weight_model_folder,
+                    checkpoint_config=checkpoint_config, from_loaded_model=train_from_loaded_model,
+                    early_stop=early_stop)
         print(f"Finish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
 
 
@@ -69,24 +71,25 @@ if __name__ == "__main__":
     load_model = False
     load_processed_data = True
     train_from_loaded_model = False
-    epochs = 1
+    epochs = 20
     skip_print = 1
     batch_size = 256
+    early_stop = 5 # 100
     seed = 6
     prop_size = 0.35
-    learning_rate = 0.001
+    learning_rate = 0.0005
     alpha = 0.01
     beta = 2
     l1 = 0.001
     l2 = 0.0005
-    embedding_dim = 64
+    embedding_dim = 128
     net2net_applied = False
     checkpoint_config = CheckpointConfig(number_saved=50, folder_path=weight_model_folder + "_ck")
 
     # link prediction params
     show_acc_on_edge = True
     top_k = 10
-    drop_node_percent = 0.15
+    drop_node_percent = 0.3
 
     # ====================== Settings =================
     np.random.seed(seed=seed)
@@ -97,7 +100,11 @@ if __name__ == "__main__":
         os.makedirs(weight_model_folder)
 
     # =============================================
-    graphs, idx2node = read_dynamic_graph(folder_path=folder_data, limit=1, convert_to_idx=True)
+    graphs, idx2node = read_dynamic_graph(
+        folder_path=folder_data,
+        limit=1,
+        convert_to_idx=True
+    )
     # g1 = nx.gnm_random_graph(n=30, m=100, seed=6)
     # g2 = nx.gnm_random_graph(n=60, m=200, seed=6)
     # graphs = [g1, g2]
@@ -105,7 +112,7 @@ if __name__ == "__main__":
     print("Number graphs: ", len(graphs))
     print("Origin graphs:")
     for i, g in enumerate(graphs):
-        print_graph_stats(g, i)
+        print_graph_stats(g, i, end="\t")
         print(f"Isolate nodes: {nx.number_of_isolates(g)}")
         # draw_graph(g, limit_node=25)
     # TODO:[BUG] loaded graph has smaller number of node then original
@@ -120,8 +127,10 @@ if __name__ == "__main__":
         G_partial_list = []
         for idx, g in enumerate(graphs):
             print(f"==== Graph {idx}: ")
-            g_df, g_partial = preprocessing_graph_for_link_prediction(G=g, k_length=2,
-                                                                      drop_node_percent=drop_node_percent)
+            g_df, g_partial = preprocessing_graph_for_link_prediction(
+                G=g, k_length=2,
+                drop_node_percent=drop_node_percent
+            )
             G_dfs.append(g_df)
             G_partial_list.append(g_partial)
             # Save processed data. NOTE: save idx graph. Not original graph
@@ -133,11 +142,14 @@ if __name__ == "__main__":
 
     print("After processing for link prediction graphs:")
     for i, g in enumerate(G_partial_list):
-        print_graph_stats(g, i)
+        print_graph_stats(g, i, end="\t")
         print(f"Isolate nodes: {nx.number_of_isolates(g)}")
 
     # -------------------------------
-    dy_ge = TDynGE(graphs=G_partial_list, embedding_dim=embedding_dim, alpha=alpha, beta=beta, l1=l1, l2=l2)
+    dy_ge = TDynGE(
+        graphs=G_partial_list, embedding_dim=embedding_dim,
+        alpha=alpha, beta=beta, l1=l1, l2=l2
+    )
     if load_model and weight_model_folder:
         if train_from_loaded_model:
             train_model()
@@ -156,10 +168,16 @@ if __name__ == "__main__":
     # ----- run evaluate link prediction -------
     for i in range(len(graphs)):
         G_df = G_dfs[i]
-        link_pred_model = run_link_pred_evaluate(graph_df=G_df, embedding=dy_embeddings[i], num_boost_round=20000)
+        link_pred_model = run_link_pred_evaluate(
+            graph_df=G_df,
+            embedding=dy_embeddings[i],
+            num_boost_round=20000
+        )
         possible_edges_df = G_df[G_df['link'] == 0]
         y_pred = run_predict(data=possible_edges_df, embedding=dy_embeddings[i], model=link_pred_model)
-        top_k_edges = top_k_prediction_edges(G=graphs[i], y_pred=y_pred, possible_edges_df=possible_edges_df,
-                                             top_k=top_k, show_acc_on_edge=show_acc_on_edge, plot_link_pred=True,
-                                             limit_node=25)
+        top_k_edges = top_k_prediction_edges(
+            G=graphs[i], y_pred=y_pred, possible_edges_df=possible_edges_df,
+            top_k=top_k, show_acc_on_edge=show_acc_on_edge, plot_link_pred=True,
+            limit_node=25
+        )
     # print(dy_embeddings[0][:10,:10])

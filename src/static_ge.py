@@ -16,6 +16,8 @@ from src.utils.model_utils import save_custom_model
 from src.utils.visualize import plot_reconstruct_graph
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
 # device = "cpu"
 
 
@@ -74,11 +76,12 @@ class TStaticGE(object):
         batch_size = x.shape[0]
         # TODO: check if divide batch_size
         loss_1 = loss_1st(y, L)
-        loss_2 = loss_2nd(x_hat, x, self.beta) / batch_size
+        loss_2 = loss_2nd(x_hat, x, self.beta)
         loss = loss_2 + self.alpha * loss_1
         return loss
 
-    def train(self, batch_size=1, epochs=1, learning_rate=1e-3, skip_print=5, ck_config: CheckpointConfig = None):
+    def train(self, batch_size=1, epochs=1, learning_rate=1e-3, skip_print=5, ck_config: CheckpointConfig = None,
+              early_stop=None, threshold_loss=1e-4):
         # TODO: set seed through parameter
         torch.manual_seed(6)
         # graph_dataset = GraphDataset(A=self.A, L=self.L)
@@ -87,6 +90,8 @@ class TStaticGE(object):
         self.model = self.model.to(device)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=self.l2)
 
+        min_loss = 1e6
+        count_epoch_no_improves = 0
         for epoch in range(epochs):
             # for data in dataloader:
             loss = None
@@ -111,6 +116,18 @@ class TStaticGE(object):
 
             if ck_config is not None:
                 save_custom_model(model=self.model, filepath=join(ck_config.FolderPath, f"graph_{ck_config.Index}"))
+
+            if loss < min_loss - threshold_loss:
+                count_epoch_no_improves = 0
+                min_loss = loss
+            else:
+                count_epoch_no_improves += 1
+
+            if early_stop is not None and count_epoch_no_improves == early_stop:
+                print('Early stopping!\t Epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, epochs, loss))
+
+                break
+
         torch.cuda.empty_cache()
 
     def get_embedding(self, x=None):
@@ -141,10 +158,10 @@ if __name__ == "__main__":
     draw_graph(G)
     pos = nx.spring_layout(G, seed=6)
 
-    ge = TStaticGE(G=G, embedding_dim=2, hidden_dims=[8, 4], l2=0.0005, alpha=0.01)
+    ge = TStaticGE(G=G, embedding_dim=2, hidden_dims=[8, 4], l2=0.01, alpha=0.1, beta=2)
     # ge = StaticGE(G=G, embedding_dim=2, hidden_dims=[8, 4])
     start_time = time()
-    ge.train(batch_size=3, epochs=1000, skip_print=100, learning_rate=0.003)
+    ge.train(batch_size=3, epochs=3000, skip_print=50, learning_rate=0.003, early_stop=100, threshold_loss=1e-4)
     print(f"Finished in {round(time() - start_time, 2)}s")
     embeddings = ge.get_embedding()
     reconstructed_graph = ge.get_reconstruction()

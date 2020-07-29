@@ -68,7 +68,7 @@ df.describe()
 Divide timestamp to `k` bin means `k` graph. Afterthat, we have 1 dynamic graph with `k` snapshot (static graph)
 """
 
-k = 25
+k = 20
 
 timestamp_range = (df.timestamp.max() - df.timestamp.min() + 1)//k 
 timestamp_range
@@ -92,7 +92,7 @@ for i in range(k):
 
 """# Save dynamic graph"""
 
-NUMBER_SAVE_GRAPH = 10
+NUMBER_SAVE_GRAPH = 8
 
 # TODO: check folder address before running
 folder = "./data/fb"
