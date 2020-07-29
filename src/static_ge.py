@@ -1,4 +1,5 @@
 from os.path import join
+from time import time
 
 import tensorflow as tf
 import networkx as nx
@@ -15,10 +16,12 @@ from src.utils.model_utils import save_custom_model
 from src.utils.visualize import plot_reconstruct_graph
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = "cpu"
 
 
 class TStaticGE(object):
-    def __init__(self, G: nx.Graph, embedding_dim=None, hidden_dims=[], model: TAutoencoder = None, alpha=0.01, beta=2, l1=0.0,
+    def __init__(self, G: nx.Graph, embedding_dim=None, hidden_dims=[], model: TAutoencoder = None, alpha=0.01, beta=2,
+                 l1=0.0,
                  l2=0.0):
         super(TStaticGE, self).__init__()
         self.G = G
@@ -108,6 +111,7 @@ class TStaticGE(object):
 
             if ck_config is not None:
                 save_custom_model(model=self.model, filepath=join(ck_config.FolderPath, f"graph_{ck_config.Index}"))
+        torch.cuda.empty_cache()
 
     def get_embedding(self, x=None):
         '''
@@ -139,7 +143,9 @@ if __name__ == "__main__":
 
     ge = TStaticGE(G=G, embedding_dim=2, hidden_dims=[8, 4], l2=0.0005, alpha=0.01)
     # ge = StaticGE(G=G, embedding_dim=2, hidden_dims=[8, 4])
+    start_time = time()
     ge.train(batch_size=3, epochs=1000, skip_print=100, learning_rate=0.003)
+    print(f"Finished in {round(time() - start_time, 2)}s")
     embeddings = ge.get_embedding()
     reconstructed_graph = ge.get_reconstruction()
     # classify_embeddings_evaluate(embeddings, label_file="../data/email-eu/email-Eu-core-department-labels.txt")

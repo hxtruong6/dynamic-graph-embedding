@@ -178,17 +178,16 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_p
     for u, v in tqdm(initial_edges):
         if (dropped_node_count / initial_edges_len) >= drop_node_percent:
             break
+        if G_partial.degree[u] < 2 or G_partial.degree[v] < 2:
+            continue
         G_partial.remove_edge(u, v)
         # TODO: Check connected component
         # if nx.number_connected_components(G_partial) == 1 and G_partial.number_of_nodes() == initial_nodes_len:
-        if G_partial.number_of_nodes() == initial_nodes_len:
-            omissible_links.append({
-                'node_1': u,
-                'node_2': v
-            })
-            dropped_node_count += 1
-        else:
-            G_partial.add_edge(u, v)
+        omissible_links.append({
+            'node_1': u,
+            'node_2': v
+        })
+        dropped_node_count += 1
 
     # create data frame of removable edges
     removed_edge_graph_df = pd.DataFrame(data=omissible_links, columns=['node_1', 'node_2'])

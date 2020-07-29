@@ -1,5 +1,6 @@
 from copy import deepcopy
-from os.path import join, exists
+from os import listdir
+from os.path import join, exists, isfile
 import os
 from time import time
 import networkx as nx
@@ -114,7 +115,12 @@ class TDynGE(object):
         print("Loading models...", end=" ")
         start_time = time()
         self.static_ges = []
-        for i in range(len(self.graphs)):
+
+        # Trick for get length of saved models
+        files = [f for f in listdir(folder_path) if isfile(join(folder_path, f))]
+        length = int(len(files) / 2)
+
+        for i in range(length):
             filepath = join(folder_path, f"graph_{i}")
             model = load_custom_model(filepath=filepath)
 

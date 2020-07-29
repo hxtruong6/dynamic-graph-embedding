@@ -67,9 +67,9 @@ if __name__ == "__main__":
     processed_data_folder = "../processed_data/fb"
     weight_model_folder = "../models/fb"
     load_model = False
-    load_processed_data = False
-    train_from_loaded_model = True
-    epochs = 10
+    load_processed_data = True
+    train_from_loaded_model = False
+    epochs = 1
     skip_print = 1
     batch_size = 256
     seed = 6
@@ -108,7 +108,7 @@ if __name__ == "__main__":
         print_graph_stats(g, i)
         print(f"Isolate nodes: {nx.number_of_isolates(g)}")
         # draw_graph(g, limit_node=25)
-
+    # TODO:[BUG] loaded graph has smaller number of node then original
     if load_processed_data:
         print("Load processed data from disk...")
         G_dfs = load_graphs_df(folder=join(processed_data_folder, "dfs"))
@@ -134,6 +134,7 @@ if __name__ == "__main__":
     print("After processing for link prediction graphs:")
     for i, g in enumerate(G_partial_list):
         print_graph_stats(g, i)
+        print(f"Isolate nodes: {nx.number_of_isolates(g)}")
 
     # -------------------------------
     dy_ge = TDynGE(graphs=G_partial_list, embedding_dim=embedding_dim, alpha=alpha, beta=beta, l1=l1, l2=l2)
