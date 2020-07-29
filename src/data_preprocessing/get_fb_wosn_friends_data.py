@@ -94,7 +94,8 @@ for i in range(k):
 
 NUMBER_SAVE_GRAPH = 10
 
-folder = "../../data/fb"
+# TODO: check folder address before running
+folder = "./data/fb"
 if not os.path.exists(folder):
     os.makedirs(folder)
 

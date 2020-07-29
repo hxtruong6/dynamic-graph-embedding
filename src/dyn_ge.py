@@ -15,7 +15,7 @@ from src.utils.visualize import plot_embedding
 
 
 class TDynGE(object):
-    def __init__(self, graphs, embedding_dim, l1=0.001, l2=0.001):
+    def __init__(self, graphs, embedding_dim, l1=0.001, l2=0.001, alpha=0.01, beta=2):
         super(TDynGE, self).__init__()
         if not graphs:
             raise ValueError("Must be provide graphs data")
@@ -25,6 +25,8 @@ class TDynGE(object):
         self.embedding_dim = embedding_dim
         self.l1 = l1
         self.l2 = l2
+        self.alpha = alpha
+        self.beta = beta
         self.static_ges = []
         self.model_folder_paths = []
 
@@ -51,9 +53,9 @@ class TDynGE(object):
                 embedding_dim=self.embedding_dim,
                 hidden_dims=init_hidden_dims,
                 l1=self.l1,
-                l2=self.l2
+                l2=self.l2,
             )
-            ge = TStaticGE(G=self.graphs[0], model=model)
+            ge = TStaticGE(G=self.graphs[0], model=model, alpha=self.alpha, beta=self.beta)
 
             if checkpoint_config is not None:
                 ck_config = deepcopy(checkpoint_config)
@@ -76,7 +78,7 @@ class TDynGE(object):
                 curr_model = handle_expand_model(model=prev_model, input_dim=input_dim,
                                                  prop_size=prop_size, net2net_applied=net2net_applied)
 
-                ge = TStaticGE(G=graph, model=curr_model)
+                ge = TStaticGE(G=graph, model=curr_model, alpha=self.alpha, beta=self.beta)
 
                 print(f"--- Training graph {i} ---")
                 start_time = time()
@@ -116,7 +118,7 @@ class TDynGE(object):
             filepath = join(folder_path, f"graph_{i}")
             model = load_custom_model(filepath=filepath)
 
-            ge = TStaticGE(G=self.graphs[i], model=model)
+            ge = TStaticGE(G=self.graphs[i], model=model, alpha=self.alpha, beta=self.beta)
             self.static_ges.append(ge)
         print(f"{round(time() - start_time, 2)}s")
 

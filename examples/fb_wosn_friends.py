@@ -61,6 +61,7 @@ if __name__ == "__main__":
                     checkpoint_config=checkpoint_config, from_loaded_model=train_from_loaded_model)
         print(f"Finish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
 
+
     # ------------ Params -----------
     folder_data = "../data/fb"
     processed_data_folder = "../processed_data/fb"
@@ -69,18 +70,23 @@ if __name__ == "__main__":
     load_processed_data = False
     train_from_loaded_model = True
     epochs = 10
-    skip_print = 5
-    batch_size = 64
+    skip_print = 1
+    batch_size = 256
     seed = 6
     prop_size = 0.35
-    learning_rate = 0.003
+    learning_rate = 0.001
+    alpha = 0.01
+    beta = 2
+    l1 = 0.001
+    l2 = 0.0005
+    embedding_dim = 64
     net2net_applied = False
     checkpoint_config = CheckpointConfig(number_saved=50, folder_path=weight_model_folder + "_ck")
 
     # link prediction params
     show_acc_on_edge = True
     top_k = 10
-    drop_node_percent = 0.5
+    drop_node_percent = 0.15
 
     # ====================== Settings =================
     np.random.seed(seed=seed)
@@ -130,7 +136,7 @@ if __name__ == "__main__":
         print_graph_stats(g, i)
 
     # -------------------------------
-    dy_ge = TDynGE(graphs=G_partial_list, embedding_dim=4)
+    dy_ge = TDynGE(graphs=G_partial_list, embedding_dim=embedding_dim, alpha=alpha, beta=beta, l1=l1, l2=l2)
     if load_model and weight_model_folder:
         if train_from_loaded_model:
             train_model()
@@ -155,3 +161,4 @@ if __name__ == "__main__":
         top_k_edges = top_k_prediction_edges(G=graphs[i], y_pred=y_pred, possible_edges_df=possible_edges_df,
                                              top_k=top_k, show_acc_on_edge=show_acc_on_edge, plot_link_pred=True,
                                              limit_node=25)
+    # print(dy_embeddings[0][:10,:10])

@@ -100,10 +100,12 @@ class TAutoencoder(nn.Module):
 
     def get_embedding(self, x):
         embedding = self.encoder(x)
+        embedding = embedding.clone().detach().cpu()
         return embedding.detach().numpy()
 
     def get_reconstruction(self, x):
         reconstruction = self.decoder(self.encoder(x))
+        reconstruction = reconstruction.clone().detach().cpu()
         return reconstruction.detach().numpy()
 
     def get_hidden_dims(self):

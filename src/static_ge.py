@@ -18,11 +18,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class TStaticGE(object):
-
-    def __init__(self, G, embedding_dim=None, hidden_dims=[], model: TAutoencoder = None, alpha=0.01, beta=2, l1=0.001,
-                 l2=0.001):
+    def __init__(self, G: nx.Graph, embedding_dim=None, hidden_dims=[], model: TAutoencoder = None, alpha=0.01, beta=2, l1=0.0,
+                 l2=0.0):
         super(TStaticGE, self).__init__()
-        self.G = nx.Graph(G)
+        self.G = G
         # TODO: set alpha beta in If statement
         self.alpha = alpha
         self.beta = beta
@@ -65,9 +64,9 @@ class TStaticGE(object):
             return 2 * torch.trace(torch.matmul(Y_, Y))
 
         def loss_2nd(X_hat, X, beta):
-            B = np.ones_like(X)
+            B = torch.ones_like(X).to(device)
             B[X != 0] = beta
-            return torch.sum(torch.square((X_hat - X) * torch.tensor(B)))
+            return torch.sum(torch.square((X_hat - X) * B))
 
         batch_size = x.shape[0]
         # TODO: check if divide batch_size
@@ -83,7 +82,7 @@ class TStaticGE(object):
         # dataloader = DataLoader(graph_dataset, batch_size=batch_size, shuffle=False, sampler=)
 
         self.model = self.model.to(device)
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=self.l2)
 
         for epoch in range(epochs):
             # for data in dataloader:
@@ -94,11 +93,13 @@ class TStaticGE(object):
                 L = torch.tensor(L)
 
                 x = Variable(A).to(device)
+                L = L.to(device)
                 # ===================forward=====================
+                optimizer.zero_grad()
+
                 x_hat, y = self.model(x)
                 loss = self._compute_loss(x, x_hat, y, L)
                 # ===================backward====================
-                optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
             # ===================log========================
@@ -117,12 +118,12 @@ class TStaticGE(object):
         if x is None:
             x = self.A.todense()
         # Convert to tensor for pytorch
-        x = torch.tensor(x)
+        x = torch.tensor(x).to(device)
         embedding = self.model.get_embedding(x=x)
         return embedding
 
     def get_reconstruction(self):
-        x = torch.tensor(self.A.todense())
+        x = torch.tensor(self.A.todense()).to(device)
         return self.model.get_reconstruction(x=x)
 
     def get_model(self):
@@ -136,9 +137,9 @@ if __name__ == "__main__":
     draw_graph(G)
     pos = nx.spring_layout(G, seed=6)
 
-    ge = TStaticGE(G=G, embedding_dim=2, hidden_dims=[8, 4])
+    ge = TStaticGE(G=G, embedding_dim=2, hidden_dims=[8, 4], l2=0.0005, alpha=0.01)
     # ge = StaticGE(G=G, embedding_dim=2, hidden_dims=[8, 4])
-    ge.train(batch_size=3, epochs=2000, skip_print=100, learning_rate=0.003)
+    ge.train(batch_size=3, epochs=1000, skip_print=100, learning_rate=0.003)
     embeddings = ge.get_embedding()
     reconstructed_graph = ge.get_reconstruction()
     # classify_embeddings_evaluate(embeddings, label_file="../data/email-eu/email-Eu-core-department-labels.txt")
