@@ -8,6 +8,7 @@ import pandas as pd
 import warnings
 
 from src.data_preprocessing.graph_preprocessing import read_dynamic_graph, get_graph_from_file
+from src.utils.checkpoint_config import CheckpointConfig
 
 warnings.filterwarnings("ignore")
 
@@ -51,19 +52,30 @@ def load_processed_graphs(folder):
     return graphs
 
 
-# https://stackoverflow.com/questions/39450065/python-3-read-write-compressed-json-objects-from-to-gzip-file
-
 if __name__ == "__main__":
+    def train_model():
+        print("\n-----------\nStart total training...")
+        start_time_train = time()
+        dy_ge.train(prop_size=prop_size, epochs=epochs, skip_print=skip_print, net2net_applied=net2net_applied,
+                    learning_rate=learning_rate, batch_size=batch_size, folder_path=weight_model_folder,
+                    checkpoint_config=checkpoint_config, from_loaded_model=train_from_loaded_model)
+        print(f"Finish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
+
     # ------------ Params -----------
     folder_data = "../data/fb"
     processed_data_folder = "../processed_data/fb"
     weight_model_folder = "../models/fb"
     load_model = False
     load_processed_data = False
+    train_from_loaded_model = True
     epochs = 10
     skip_print = 5
-    batch_size = 256
+    batch_size = 64
     seed = 6
+    prop_size = 0.35
+    learning_rate = 0.003
+    net2net_applied = False
+    checkpoint_config = CheckpointConfig(number_saved=50, folder_path=weight_model_folder + "_ck")
 
     # link prediction params
     show_acc_on_edge = True
@@ -79,10 +91,10 @@ if __name__ == "__main__":
         os.makedirs(weight_model_folder)
 
     # =============================================
-    # graphs, idx2node = read_dynamic_graph(folder_path=folder_data, limit=1, convert_to_idx=True)
-    g1 = nx.gnm_random_graph(n=30, m=100, seed=6)
-    g2 = nx.gnm_random_graph(n=60, m=200, seed=6)
-    graphs = [g1, g2]
+    graphs, idx2node = read_dynamic_graph(folder_path=folder_data, limit=1, convert_to_idx=True)
+    # g1 = nx.gnm_random_graph(n=30, m=100, seed=6)
+    # g2 = nx.gnm_random_graph(n=60, m=200, seed=6)
+    # graphs = [g1, g2]
 
     print("Number graphs: ", len(graphs))
     print("Origin graphs:")
@@ -120,18 +132,17 @@ if __name__ == "__main__":
     # -------------------------------
     dy_ge = TDynGE(graphs=G_partial_list, embedding_dim=4)
     if load_model and weight_model_folder:
-        print("\n-----------\nStart load model...")
-        start_time = time()
-        dy_ge.load_models(folder_path=weight_model_folder)
-        print(f"Loaded model: {round(time() - start_time, 2)}s\n--------------\n")
-
+        if train_from_loaded_model:
+            train_model()
+        else:
+            print("\n-----------\nStart load model...")
+            start_time = time()
+            dy_ge.load_models(folder_path=weight_model_folder)
+            print(f"Loaded model: {round(time() - start_time, 2)}s\n--------------\n")
     else:
-        print("\n-----------\nStart total training...")
-        start_time = time()
-        dy_ge.train(prop_size=0.3, epochs=epochs, skip_print=skip_print, net2net_applied=False,
-                    learning_rate=0.0001,
-                    batch_size=batch_size, folder_path=weight_model_folder, checkpoint_config=None)
-        print(f"Finish total training: {round(time() - start_time, 2)}s\n--------------\n")
+        # if load_model==False => train_from_loaded_model = False
+        train_from_loaded_model = False
+        train_model()
 
     dy_embeddings = dy_ge.get_all_embeddings()
 
