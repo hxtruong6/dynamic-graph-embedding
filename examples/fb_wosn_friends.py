@@ -11,7 +11,7 @@ from src.data_preprocessing.graph_preprocessing import read_dynamic_graph, get_g
 
 warnings.filterwarnings("ignore")
 
-from src.dyn_ge import DynGE
+from src.dyn_ge import TDynGE
 from src.utils.graph_util import graph_to_graph_idx, print_graph_stats, draw_graph
 from src.utils.link_prediction import preprocessing_graph_for_link_prediction, run_link_pred_evaluate, run_predict, \
     top_k_prediction_edges
@@ -79,10 +79,10 @@ if __name__ == "__main__":
         os.makedirs(weight_model_folder)
 
     # =============================================
-    graphs, idx2node = read_dynamic_graph(folder_path=folder_data, limit=1, convert_to_idx=True)
-    # g1 = nx.gnm_random_graph(n=30, m=100, seed=6)
-    # g2 = nx.gnm_random_graph(n=60, m=200, seed=6)
-    # graphs = [g1, g2]
+    # graphs, idx2node = read_dynamic_graph(folder_path=folder_data, limit=1, convert_to_idx=True)
+    g1 = nx.gnm_random_graph(n=30, m=100, seed=6)
+    g2 = nx.gnm_random_graph(n=60, m=200, seed=6)
+    graphs = [g1, g2]
 
     print("Number graphs: ", len(graphs))
     print("Origin graphs:")
@@ -118,7 +118,7 @@ if __name__ == "__main__":
         print_graph_stats(g, i)
 
     # -------------------------------
-    dy_ge = DynGE(graphs=G_partial_list, embedding_dim=4)
+    dy_ge = TDynGE(graphs=G_partial_list, embedding_dim=4)
     if load_model and weight_model_folder:
         print("\n-----------\nStart load model...")
         start_time = time()
@@ -130,7 +130,7 @@ if __name__ == "__main__":
         start_time = time()
         dy_ge.train(prop_size=0.3, epochs=epochs, skip_print=skip_print, net2net_applied=False,
                     learning_rate=0.0001,
-                    batch_size=batch_size, folder_path=weight_model_folder, save_model_point=None)
+                    batch_size=batch_size, folder_path=weight_model_folder, checkpoint_config=None)
         print(f"Finish total training: {round(time() - start_time, 2)}s\n--------------\n")
 
     dy_embeddings = dy_ge.get_all_embeddings()

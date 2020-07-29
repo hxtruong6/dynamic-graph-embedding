@@ -65,10 +65,10 @@ def save_custom_model(model: TAutoencoder, filepath, checkpoint=None, compress=T
     # if not exists(folder_fpath):
     #     os.makedirs(folder_path)
 
-    # TODO: how to use save_weights
-    # model.save_weights(join(folder_path, name))
-    # save_weights_model(weights=model.get_weights_model(), filepath=join(folder_path, name + '_weights.json'),
-    #                    compress=compress)
+    folder_path = filepath[:filepath.rfind('/')]
+    if not exists(folder_path):
+        os.makedirs(folder_path)
+
     model_path = filepath + ".pt"
     torch.save(model.state_dict(), model_path)
 
@@ -91,7 +91,7 @@ def load_custom_model(filepath):
         l1=config_layer['l1'],
         l2=config_layer['l2']
     )
-    
+
     model_path = filepath + ".pt"
     model.load_state_dict(torch.load(model_path))
     model.eval()

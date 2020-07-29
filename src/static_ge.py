@@ -1,3 +1,5 @@
+from os.path import join
+
 import tensorflow as tf
 import networkx as nx
 import numpy as np
@@ -7,7 +9,9 @@ from torch.autograd import Variable
 
 from src.data_preprocessing.graph_preprocessing import next_datasets
 from src.utils.autoencoder import TAutoencoder
+from src.utils.checkpoint_config import CheckpointConfig
 from src.utils.graph_util import draw_graph, print_graph_stats
+from src.utils.model_utils import save_custom_model
 from src.utils.visualize import plot_reconstruct_graph
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -15,28 +19,35 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class TStaticGE(object):
 
-    def __init__(self, G, embedding_dim=None, hidden_dims=[], model: TAutoencoder = None, alpha=0.01, beta=2, nu1=0.001,
-                 nu2=0.001):
+    def __init__(self, G, embedding_dim=None, hidden_dims=[], model: TAutoencoder = None, alpha=0.01, beta=2, l1=0.001,
+                 l2=0.001):
         super(TStaticGE, self).__init__()
         self.G = nx.Graph(G)
+        # TODO: set alpha beta in If statement
         self.alpha = alpha
         self.beta = beta
-        self.l1 = nu1
-        self.l2 = nu2
 
         if model is None:
             self.embedding_dim = embedding_dim
             self.hidden_dims = hidden_dims
             self.input_dim = self.G.number_of_nodes()
+            self.l1 = l1
+            self.l2 = l2
             self.model = TAutoencoder(
                 input_dim=self.input_dim,
                 embedding_dim=self.embedding_dim,
                 hidden_dims=self.hidden_dims,
-                l1=nu1,
-                l2=nu2
+                l1=l1,
+                l2=l2
             )
         else:
             self.model = model
+            config_layer = self.model.get_config_layer()
+            self.embedding_dim = config_layer['embedding_dim']
+            self.hidden_dims = config_layer['hidden_dims']
+            self.input_dim = config_layer['input_dim']
+            self.l1 = config_layer['l1']
+            self.l2 = config_layer['l2']
 
         self.A: sparse.csr_matrix
         self.L: sparse.csr_matrix
@@ -65,7 +76,7 @@ class TStaticGE(object):
         loss = loss_2 + self.alpha * loss_1
         return loss
 
-    def train(self, batch_size=1, epochs=1, learning_rate=1e-3, skip_print=5):
+    def train(self, batch_size=1, epochs=1, learning_rate=1e-3, skip_print=5, ck_config: CheckpointConfig = None):
         # TODO: set seed through parameter
         torch.manual_seed(6)
         # graph_dataset = GraphDataset(A=self.A, L=self.L)
@@ -93,6 +104,9 @@ class TStaticGE(object):
             # ===================log========================
             if (epoch + 1) % skip_print == 0 or epoch == epochs - 1 or epoch == 0:
                 print('epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, epochs, loss))
+
+            if ck_config is not None:
+                save_custom_model(model=self.model, filepath=join(ck_config.FolderPath, f"graph_{ck_config.Index}"))
 
     def get_embedding(self, x=None):
         '''
