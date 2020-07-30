@@ -103,6 +103,16 @@ class TDynGE(object):
                 if model_index >= len(self.static_ges):
                     raise ValueError("Model_index is invalid!")
 
+                if model_index > 0:
+                    graph = nx.Graph(self.graphs[model_index])
+                    input_dim = len(graph.nodes())
+                    prev_model = load_custom_model(filepath=join(folder_path, f"graph_{model_index - 1}"))
+                    curr_model = handle_expand_model(model=prev_model, input_dim=input_dim,
+                                                     prop_size=prop_size, net2net_applied=net2net_applied)
+
+                    ge = TStaticGE(G=graph, model=curr_model, alpha=self.alpha, beta=self.beta)
+                    self.static_ges[model_index] = ge
+
                 if checkpoint_config is not None:
                     ck_config = deepcopy(checkpoint_config)
                     ck_config.Index = model_index

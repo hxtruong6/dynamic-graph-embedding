@@ -27,7 +27,7 @@ def save_processed_graph(graph, folder, index):
 def save_graph_df(graph_df: pd.DataFrame, folder, index):
     if not exists(folder):
         os.makedirs(folder)
-    graph_df.to_json(join(folder, f"graph_{index}.json.gz"))
+    graph_df.to_json(join(folder, f"graph_{index}.json"))
     # graph_df.to_csv(join(folder, f"graph_{index}.csv"), index=False)
 
 
@@ -37,7 +37,7 @@ def load_graphs_df(folder):
     for f in sorted(files):
         graphs_df.append(
             # pd.read_csv(join(folder, f))
-            pd.read_json(join(folder, f), compression='gzip')
+            pd.read_json(join(folder, f))
         )
     return graphs_df
 
@@ -53,33 +53,47 @@ def load_processed_graphs(folder):
 
 
 if __name__ == "__main__":
+    # If model_idx -> must be train from previous model
     def train_model():
         print("\n-----------\nStart total training...")
         start_time_train = time()
-        dy_ge.train(prop_size=prop_size, epochs=epochs, skip_print=skip_print,
-                    net2net_applied=net2net_applied, learning_rate=learning_rate,
-                    batch_size=batch_size, folder_path=weight_model_folder,
-                    checkpoint_config=checkpoint_config, from_loaded_model=train_from_loaded_model,
-                    early_stop=early_stop)
+        for model_idx in range(len(G_partial_list)):
+            print(f"==========\t Model index = {model_idx} ============")
+            for lr in learning_rate_list:
+                print("\tLearning rate = ", lr)
+                dy_ge.train(prop_size=prop_size, epochs=epochs, skip_print=skip_print,
+                            net2net_applied=net2net_applied, learning_rate=lr,
+                            batch_size=batch_size, folder_path=weight_model_folder,
+                            checkpoint_config=checkpoint_config, from_loaded_model=train_from_loaded_model,
+                            early_stop=early_stop, model_index=model_idx)
         print(f"Finish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
 
 
+    # TODO: optimize each graph before next graph
+    '''
+    for i = 0 -> n: model_index
+        for lr in learning_rate_list    
+    '''
+
     # ------------ Params -----------
-    folder_data = "../data/cit_hepth"
-    processed_data_folder = "../processed_data/cit_hepth"
-    weight_model_folder = "../models/cit_hepth"
+    folder_data = "./data/cit_hepth"
+    processed_data_folder = "./processed_data/cit_hepth"
+    weight_model_folder = "./models/cit_hepth"
     load_model = False
-    load_processed_data = True
+    load_processed_data = False
     train_from_loaded_model = False
-    epochs = 20
-    skip_print = 1
-    batch_size = 256
-    early_stop = 5 # 100
+    model_index = None  # index here
+    epochs = 10000
+    skip_print = 200
+    batch_size = 512  # 512
+    early_stop = 200  # 100
     seed = 6
     prop_size = 0.35
-    learning_rate = 0.0005
+    # learning_rate = 0.0005  # 0.005, 0.003, 0.001, 0.0005, 0.0001, 0.00005
+    learning_rate_list = [0.01, 0.005, 0.001, 0.0005, 1e-4, 5e-5, 1e-5]  # empty if not need to train with list lr else priority
+
     alpha = 0.01
-    beta = 2
+    beta = 6
     l1 = 0.001
     l2 = 0.0005
     embedding_dim = 128
@@ -89,7 +103,7 @@ if __name__ == "__main__":
     # link prediction params
     show_acc_on_edge = True
     top_k = 10
-    drop_node_percent = 0.3
+    drop_node_percent = 0.4
 
     # ====================== Settings =================
     np.random.seed(seed=seed)
@@ -102,7 +116,7 @@ if __name__ == "__main__":
     # =============================================
     graphs, idx2node = read_dynamic_graph(
         folder_path=folder_data,
-        limit=1,
+        limit=None,
         convert_to_idx=True
     )
     # g1 = nx.gnm_random_graph(n=30, m=100, seed=6)
@@ -150,6 +164,7 @@ if __name__ == "__main__":
         graphs=G_partial_list, embedding_dim=embedding_dim,
         alpha=alpha, beta=beta, l1=l1, l2=l2
     )
+
     if load_model and weight_model_folder:
         if train_from_loaded_model:
             train_model()
@@ -163,21 +178,21 @@ if __name__ == "__main__":
         train_from_loaded_model = False
         train_model()
 
-    dy_embeddings = dy_ge.get_all_embeddings()
+    # dy_embeddings = dy_ge.get_all_embeddings()
 
     # ----- run evaluate link prediction -------
-    for i in range(len(graphs)):
-        G_df = G_dfs[i]
-        link_pred_model = run_link_pred_evaluate(
-            graph_df=G_df,
-            embedding=dy_embeddings[i],
-            num_boost_round=20000
-        )
-        possible_edges_df = G_df[G_df['link'] == 0]
-        y_pred = run_predict(data=possible_edges_df, embedding=dy_embeddings[i], model=link_pred_model)
-        top_k_edges = top_k_prediction_edges(
-            G=graphs[i], y_pred=y_pred, possible_edges_df=possible_edges_df,
-            top_k=top_k, show_acc_on_edge=show_acc_on_edge, plot_link_pred=True,
-            limit_node=25
-        )
+    # for i in range(len(graphs)):
+    #     G_df = G_dfs[i]
+    #     link_pred_model = run_link_pred_evaluate(
+    #         graph_df=G_df,
+    #         embedding=dy_embeddings[i],
+    #         num_boost_round=20000
+    #     )
+    #     possible_edges_df = G_df[G_df['link'] == 0]
+    #     y_pred = run_predict(data=possible_edges_df, embedding=dy_embeddings[i], model=link_pred_model)
+    #     top_k_edges = top_k_prediction_edges(
+    #         G=graphs[i], y_pred=y_pred, possible_edges_df=possible_edges_df,
+    #         top_k=top_k, show_acc_on_edge=show_acc_on_edge, plot_link_pred=True,
+    #         limit_node=25
+    #     )
     # print(dy_embeddings[0][:10,:10])
