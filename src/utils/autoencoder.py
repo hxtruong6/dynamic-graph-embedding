@@ -1,17 +1,5 @@
-import os
-
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-import tensorflow as tf
-from tensorflow.keras.layers import Layer, Dense
-from tensorflow.keras import Model, regularizers, initializers
-import numpy as np
-import json
-
-from src.utils.net2net import net2wider, net2deeper
-
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 

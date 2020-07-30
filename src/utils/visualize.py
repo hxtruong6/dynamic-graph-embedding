@@ -1,12 +1,15 @@
+from os.path import join
+from time import time
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 import networkx as nx
+
 from src.data_preprocessing.graph_preprocessing import read_node_label
 from src.utils.graph_util import draw_graph
 
 
-def plot_embeddings_with_labels(graph, embeddings, path_file=None):
+def plot_embeddings_with_labels(graph, embeddings, path_file=None, save_path=None):
     emb_list = []
 
     X = []
@@ -34,6 +37,9 @@ def plot_embeddings_with_labels(graph, embeddings, path_file=None):
     for c, idx in color_idx.items():
         plt.scatter(node_pos[idx, 0], node_pos[idx, 1], label=c)
     plt.legend()
+    if save_path is not None:
+        plt.savefig(join(save_path, f"ge_{int(time())}.png"))
+
     plt.show()
 
 
