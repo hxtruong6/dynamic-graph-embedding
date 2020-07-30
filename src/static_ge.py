@@ -11,14 +11,14 @@ from src.utils.autoencoder import TAutoencoder
 from src.utils.checkpoint_config import CheckpointConfig
 from src.utils.graph_util import draw_graph, print_graph_stats
 from src.utils.model_utils import save_custom_model
-from src.utils.visualize import plot_reconstruct_graph, plot_embeddings_with_labels
+from src.utils.visualize import plot_reconstruct_graph, plot_embeddings_with_labels, plot_losses
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class TStaticGE(object):
     def __init__(self, G: nx.Graph, embedding_dim=None, hidden_dims=None, model: TAutoencoder = None,
-                 alpha=0.01, beta=2, l1=0.0, l2=1e-5):
+                 alpha=0.01, beta=2, l1=0.0, l2=1e-5, activation='sigmoid'):
         super(TStaticGE, self).__init__()
         if hidden_dims is None:
             hidden_dims = []
@@ -26,6 +26,7 @@ class TStaticGE(object):
         # TODO: set alpha beta in If statement
         self.alpha = alpha
         self.beta = beta
+        self.activation = activation
 
         if model is None:
             self.embedding_dim = embedding_dim
@@ -38,7 +39,8 @@ class TStaticGE(object):
                 embedding_dim=self.embedding_dim,
                 hidden_dims=self.hidden_dims,
                 l1=l1,
-                l2=l2
+                l2=l2,
+                activation=activation
             )
         else:
             self.model = model
@@ -77,7 +79,7 @@ class TStaticGE(object):
         return loss
 
     def train(self, batch_size=1, epochs=1, learning_rate=1e-3, skip_print=5, ck_config: CheckpointConfig = None,
-              early_stop=None, threshold_loss=1e-4):
+              early_stop=None, threshold_loss=1e-4, plot_loss=False):
         # TODO: set seed through parameter
         torch.manual_seed(6)
         # graph_dataset = GraphDataset(A=self.A, L=self.L)
@@ -88,6 +90,7 @@ class TStaticGE(object):
 
         min_loss = 1e6
         count_epoch_no_improves = 0
+        train_losses = []
         for epoch in range(epochs):
             # for data in dataloader:
             loss = None
@@ -95,7 +98,6 @@ class TStaticGE(object):
                 A, L = batch_inp
                 A = torch.tensor(A)
                 L = torch.tensor(L)
-
                 x = Variable(A).to(device)
                 L = L.to(device)
                 # ===================forward=====================
@@ -107,6 +109,7 @@ class TStaticGE(object):
                 loss.backward()
                 optimizer.step()
             # ===================log========================
+            train_losses.append(round(float(loss), 4))
             if (epoch + 1) % skip_print == 0 or epoch == epochs - 1 or epoch == 0:
                 print('epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, epochs, loss))
 
@@ -124,6 +127,8 @@ class TStaticGE(object):
                 break
 
         torch.cuda.empty_cache()
+        if plot_loss:
+            plot_losses(losses=train_losses, x_label="epoch", y_label="loss")
 
     def get_embedding(self, x=None):
         '''
@@ -135,12 +140,17 @@ class TStaticGE(object):
             x = self.A.todense()
         # Convert to tensor for pytorch
         x = torch.tensor(x).to(device)
-        embedding = self.model.get_embedding(x=x)
+        with torch.no_grad():
+            embedding = self.model.get_embedding(x=x)
         return embedding
 
-    def get_reconstruction(self):
-        x = torch.tensor(self.A.todense()).to(device)
-        return self.model.get_reconstruction(x=x)
+    def get_reconstruction(self, x=None):
+        if x is None:
+            x = self.A.todense()
+        x = torch.tensor(x).to(device)
+        with torch.no_grad():
+            reconstruction = self.model.get_reconstruction(x=x)
+        return reconstruction
 
     def get_model(self):
         return self.model
@@ -148,23 +158,36 @@ class TStaticGE(object):
 
 if __name__ == "__main__":
     G = get_graph_from_file(filename="../data/email-eu/email-Eu-core.txt")
-    # G = nx.gnm_random_graph(n=11, m=15, seed=6)
+    # G = nx.gnm_random_graph(n=15, m=30, seed=6)
     print_graph_stats(G)
-    # draw_graph(G, limit_node=50)
-    # pos = nx.spring_layout(G, seed=6)
+    draw_graph(G, limit_node=50)
+    pos = nx.spring_layout(G, seed=6)
+    # print(G.edges)
 
-    ge = TStaticGE(G=G, embedding_dim=16, hidden_dims=[512, 128, 64], l2=1e-5, alpha=0.01, beta=2)
+    ge = TStaticGE(
+        G=G,
+        embedding_dim=16,
+        hidden_dims=[512, 128, 64],
+        l2=1e-5, alpha=0.01, beta=6
+    )
+    # ge = TStaticGE(G=G, embedding_dim=4, hidden_dims=[8], l2=1e-5, alpha=0.01, beta=6,
+    #                activation='sigmoid')
     start_time = time()
-    ge.train(batch_size=128, epochs=2000, skip_print=20, learning_rate=0.001, early_stop=100, threshold_loss=1e-4)
+    ge.train(batch_size=256, epochs=3000, skip_print=100,
+             learning_rate=0.0008, early_stop=200, threshold_loss=1e-4,
+             plot_loss=True
+    )
+    # ge.train(batch_size=128, epochs=10000, skip_print=500, learning_rate=0.001, early_stop=200, threshold_loss=1e-4)
     print(f"Finished in {round(time() - start_time, 2)}s")
     embeddings = ge.get_embedding()
     reconstructed_graph = ge.get_reconstruction()
+    # print(reconstructed_graph)
     # classify_embeddings_evaluate(embeddings, label_file="../data/email-eu/email-Eu-core-department-labels.txt")
     plot_embeddings_with_labels(G, embeddings=embeddings,
                                 path_file="../data/email-eu/email-Eu-core-department-labels.txt",
                                 save_path="../images/Email-static-ge")
 
-    save_custom_model(ge.get_model(), filepath="../models/email-eu/email-eu")
+    # save_custom_model(ge.get_model(), filepath="../models/email-eu/email-eu")
 
     # plot_embedding(embeddings=embeddings)
     # plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0.6)

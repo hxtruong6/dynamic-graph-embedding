@@ -41,7 +41,8 @@ class TDynGE(object):
 
     def train(self, prop_size=0.4, batch_size=64, epochs=100, folder_path="../models/generate/", skip_print=5,
               net2net_applied=False, learning_rate=0.001, checkpoint_config: CheckpointConfig = None,
-              from_loaded_model=False, early_stop=50):
+              from_loaded_model=False, early_stop=50, model_index=None
+              ):
         ck_config = None
         if not from_loaded_model:
             init_hidden_dims = get_hidden_layer(prop_size=prop_size, input_dim=len(self.graphs[0].nodes()),
@@ -93,6 +94,24 @@ class TDynGE(object):
 
                 self.static_ges.append(ge)
                 save_custom_model(model=curr_model, filepath=join(folder_path, f"graph_{i}"))
+        elif model_index is not None:
+            if len(self.static_ges) == 0:
+                self.load_models(folder_path=folder_path)
+            if model_index >= len(self.static_ges):
+                raise ValueError("Model_index is invalid!")
+
+            if checkpoint_config is not None:
+                ck_config = deepcopy(checkpoint_config)
+                ck_config.Index = model_index
+            print(f"--- Training graph {model_index} ---")
+            start_time = time()
+
+            self.static_ges[model_index].train(batch_size=batch_size, epochs=epochs, skip_print=skip_print,
+                                               learning_rate=learning_rate, ck_config=ck_config, early_stop=early_stop)
+            print(f"Training time in {round(time() - start_time, 2)}s")
+            save_custom_model(model=self.static_ges[model_index].get_model(),
+                              filepath=join(folder_path, f"graph_{model_index}"))
+
         else:
             # Check dyn_ge has model?
             if len(self.static_ges) == 0:

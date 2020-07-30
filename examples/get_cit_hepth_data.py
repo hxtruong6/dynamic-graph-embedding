@@ -21,7 +21,6 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
-import tensorflow as tf
 import requests
 import zipfile
 from datetime import datetime
@@ -95,7 +94,7 @@ for i in range(k):
 
 NUMBER_SAVE_GRAPH = 6
 
-folder = "../data/"
+folder = "./data/cit_hepth"
 if not os.path.exists(folder):
     os.makedirs(folder)
 

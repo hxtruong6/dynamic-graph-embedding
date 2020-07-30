@@ -5,19 +5,23 @@ from torch.utils.data import DataLoader
 
 
 class TPartCoder(nn.Module):
-    def __init__(self, input_dim, output_dim=2, hidden_dims=None, activation='tanh', is_encoder=True):
+    def __init__(self, input_dim, output_dim=2, hidden_dims=None, activation='sigmoid', is_encoder=True):
         '''
 
         :param input_dim:
         :param output_dim:
         :param hidden_dims:
-        :param activation: 'tanh' | 'sigmoid'
+        :param activation: 'tanh' | 'sigmoid' | 'relu' | 'leaky_relu'
         '''
         super(TPartCoder, self).__init__()
         if activation == 'tanh':
             self.activation = nn.Tanh()
         elif activation == 'sigmoid':
             self.activation = nn.Sigmoid()
+        elif activation == 'relu':
+            self.activation = nn.ReLU()
+        elif activation == 'leaky_relu':
+            self.activation = nn.LeakyReLU()
         else:
             raise NotImplementedError
         self.is_encoder = is_encoder
@@ -38,7 +42,7 @@ class TPartCoder(nn.Module):
             x = nn.ReLU()(x)
             x = self.layers[i](x)
 
-        if self.is_encoder:
+        if not self.is_encoder:
             x = self.activation(x)
 
         return x
@@ -64,13 +68,13 @@ class TPartCoder(nn.Module):
         self.layers.insert(0, layer)
 
     def insert_last_layer(self, layer_dim):
-        in_feature = self.layers[-1].out_features  # self.layers[-1] is Sigmoid activation
+        in_feature = self.layers[-1].out_features
         layer = nn.Linear(in_features=in_feature, out_features=layer_dim).apply(weights_init)
         self.layers.append(layer)
 
 
 class TAutoencoder(nn.Module):
-    def __init__(self, input_dim=None, embedding_dim=None, hidden_dims=None, l1=0.01, l2=0.01, activation='tanh'):
+    def __init__(self, input_dim=None, embedding_dim=None, hidden_dims=None, l1=0.01, l2=1e-5, activation='sigmoid'):
         super(TAutoencoder, self).__init__()
         if input_dim is None or embedding_dim is None:
             return
@@ -151,14 +155,21 @@ if __name__ == "__main__":
     torch.manual_seed(6)
 
     num_epochs = 1000
-    dataset = torch.randn(4, 3)
+    dataset = torch.randn(3, 3).uniform_(0, 1)
+    dataset[dataset > 0.5] = 1.
+    dataset[dataset <= 0.5] = 0.
+    # print(dataset)
+    # print(torch.transpose(dataset, 0, 1))
+    # dataset = (dataset + torch.transpose(dataset, 0, 1)) / 2
+    # print(dataset)
+
     dataloader = DataLoader(dataset, batch_size=3, shuffle=False)
 
     #  create dataset
 
-    ae = TAutoencoder(input_dim=3, embedding_dim=2, hidden_dims=[4]).to(device)
+    ae = TAutoencoder(input_dim=3, embedding_dim=2, hidden_dims=[4], activation='sigmoid').to(device)
 
-    optimizer = torch.optim.Adam(ae.parameters(), lr=1e-3)
+    optimizer = torch.optim.Adam(ae.parameters(), lr=1e-3, weight_decay=1e-5)
 
     # mean-squared error loss
     criterion = nn.MSELoss()
@@ -182,7 +193,8 @@ if __name__ == "__main__":
     # ae.info(show_weights=True)
 
     print("Original: ", dataset)
-    output, _ = ae(torch.tensor(dataset).to(device))
+    output, e = ae(torch.tensor(dataset).to(device))
+    print("Embdding: ", e.cpu().data)
     print("Reconstruction: ", output.cpu().data)
 
     # print("\nExpand autoencoder")

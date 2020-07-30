@@ -1,11 +1,9 @@
 from os import listdir
 from os.path import isfile, join
 from time import time
-
 import networkx as nx
 import numpy as np
-import tensorflow as tf
-from tensorflow import SparseTensor
+# from tensorflow import SparseTensor
 
 
 def get_graph_from_file(filename):
@@ -15,10 +13,10 @@ def get_graph_from_file(filename):
     return G
 
 
-def convert_sparse_matrix_to_sparse_tensor(X):
-    coo = X.tocoo()
-    indices = np.mat([coo.row, coo.col]).transpose()
-    return SparseTensor(indices, coo.data, coo.shape)
+# def convert_sparse_matrix_to_sparse_tensor(X):
+#     coo = X.tocoo()
+#     indices = np.mat([coo.row, coo.col]).transpose()
+#     return SparseTensor(indices, coo.data, coo.shape)
 
 
 def next_datasets(A, L, batch_size):
