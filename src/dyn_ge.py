@@ -94,41 +94,39 @@ class TDynGE(object):
 
                 self.static_ges.append(ge)
                 save_custom_model(model=curr_model, filepath=join(folder_path, f"graph_{i}"))
-        elif model_index is not None:
-            if len(self.static_ges) == 0:
-                self.load_models(folder_path=folder_path)
-            if model_index >= len(self.static_ges):
-                raise ValueError("Model_index is invalid!")
-
-            if checkpoint_config is not None:
-                ck_config = deepcopy(checkpoint_config)
-                ck_config.Index = model_index
-            print(f"--- Training graph {model_index} ---")
-            start_time = time()
-
-            self.static_ges[model_index].train(batch_size=batch_size, epochs=epochs, skip_print=skip_print,
-                                               learning_rate=learning_rate, ck_config=ck_config, early_stop=early_stop)
-            print(f"Training time in {round(time() - start_time, 2)}s")
-            save_custom_model(model=self.static_ges[model_index].get_model(),
-                              filepath=join(folder_path, f"graph_{model_index}"))
-
         else:
             # Check dyn_ge has model?
             if len(self.static_ges) == 0:
                 self.load_models(folder_path=folder_path)
 
-            # TODO: ck_config here
-            for i in range(len(self.graphs)):
+            if model_index is not None:
+                if model_index >= len(self.static_ges):
+                    raise ValueError("Model_index is invalid!")
+
                 if checkpoint_config is not None:
                     ck_config = deepcopy(checkpoint_config)
-                    ck_config.Index = i
-                print(f"--- Training graph {i} ---")
+                    ck_config.Index = model_index
+                print(f"---* Training graph at Index = {model_index} ---")
                 start_time = time()
 
-                self.static_ges[i].train(batch_size=batch_size, epochs=epochs, skip_print=skip_print,
-                                         learning_rate=learning_rate, ck_config=ck_config, early_stop=early_stop)
+                self.static_ges[model_index].train(batch_size=batch_size, epochs=epochs, skip_print=skip_print,
+                                                   learning_rate=learning_rate, ck_config=ck_config,
+                                                   early_stop=early_stop)
                 print(f"Training time in {round(time() - start_time, 2)}s")
-                save_custom_model(model=self.static_ges[i].get_model(), filepath=join(folder_path, f"graph_{i}"))
+                save_custom_model(model=self.static_ges[model_index].get_model(),
+                                  filepath=join(folder_path, f"graph_{model_index}"))
+            else:
+                for i in range(len(self.graphs)):
+                    if checkpoint_config is not None:
+                        ck_config = deepcopy(checkpoint_config)
+                        ck_config.Index = i
+                    print(f"--- Training graph {i} ---")
+                    start_time = time()
+
+                    self.static_ges[i].train(batch_size=batch_size, epochs=epochs, skip_print=skip_print,
+                                             learning_rate=learning_rate, ck_config=ck_config, early_stop=early_stop)
+                    print(f"Training time in {round(time() - start_time, 2)}s")
+                    save_custom_model(model=self.static_ges[i].get_model(), filepath=join(folder_path, f"graph_{i}"))
 
     def load_models(self, folder_path):
         print("Loading models...", end=" ")
@@ -160,8 +158,8 @@ if __name__ == "__main__":
 
     dy_ge = TDynGE(graphs=graphs, embedding_dim=4)
     # dy_ge.load_models(folder_path="../models/generate")
-    dy_ge.train(prop_size=0.4, epochs=100, skip_print=2, net2net_applied=False, learning_rate=0.003,
-                folder_path="../models/generate/", from_loaded_model=True, checkpoint_config=checkpoint_config,
+    dy_ge.train(prop_size=0.4, epochs=100, skip_print=10, net2net_applied=False, learning_rate=0.003,
+                folder_path="../models/generate/", from_loaded_model=False, checkpoint_config=checkpoint_config,
                 early_stop=50)
 
     # dy_ge.train(prop_size=0.4, epochs=100, skip_print=5, net2net_applied=False, learning_rate=0.003,
@@ -169,5 +167,5 @@ if __name__ == "__main__":
 
     print("Show embedding:")
     embeddings_list = dy_ge.get_all_embeddings()
-    for e in embeddings_list:
-        plot_embedding(embeddings=e)
+    # for e in embeddings_list:
+    #     plot_embedding(embeddings=e)

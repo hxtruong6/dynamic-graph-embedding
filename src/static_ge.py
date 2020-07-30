@@ -140,8 +140,10 @@ class TStaticGE(object):
             x = self.A.todense()
         # Convert to tensor for pytorch
         x = torch.tensor(x).to(device)
+
         with torch.no_grad():
-            embedding = self.model.get_embedding(x=x)
+            embedding = self.model.to(device).get_embedding(x=x)
+        torch.cuda.empty_cache()
         return embedding
 
     def get_reconstruction(self, x=None):
@@ -149,7 +151,8 @@ class TStaticGE(object):
             x = self.A.todense()
         x = torch.tensor(x).to(device)
         with torch.no_grad():
-            reconstruction = self.model.get_reconstruction(x=x)
+            reconstruction = self.model.to(device).get_reconstruction(x=x)
+        torch.cuda.empty_cache()
         return reconstruction
 
     def get_model(self):
@@ -173,10 +176,11 @@ if __name__ == "__main__":
     # ge = TStaticGE(G=G, embedding_dim=4, hidden_dims=[8], l2=1e-5, alpha=0.01, beta=6,
     #                activation='sigmoid')
     start_time = time()
-    ge.train(batch_size=256, epochs=3000, skip_print=100,
+    ge.train(batch_size=256, epochs=2, skip_print=100,
              learning_rate=0.0008, early_stop=200, threshold_loss=1e-4,
              plot_loss=True
     )
+
     # ge.train(batch_size=128, epochs=10000, skip_print=500, learning_rate=0.001, early_stop=200, threshold_loss=1e-4)
     print(f"Finished in {round(time() - start_time, 2)}s")
     embeddings = ge.get_embedding()
