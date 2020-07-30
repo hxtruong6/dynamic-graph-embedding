@@ -5,7 +5,9 @@ import numpy as np
 import scipy.sparse as sparse
 import torch
 from torch.autograd import Variable
+from torch.utils.data import DataLoader
 
+from src.data_preprocessing.graph_dataset import GraphDataset
 from src.data_preprocessing.graph_preprocessing import next_datasets, get_graph_from_file
 from src.utils.autoencoder import TAutoencoder
 from src.utils.checkpoint_config import CheckpointConfig
@@ -82,8 +84,8 @@ class TStaticGE(object):
               early_stop=None, threshold_loss=1e-4, plot_loss=False):
         # TODO: set seed through parameter
         torch.manual_seed(6)
-        # graph_dataset = GraphDataset(A=self.A, L=self.L)
-        # dataloader = DataLoader(graph_dataset, batch_size=batch_size, shuffle=False, sampler=)
+        graph_dataset = GraphDataset(A=self.A, L=self.L, batch_size=batch_size)
+        dataloader = DataLoader(graph_dataset)
 
         self.model = self.model.to(device)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=self.l2)
@@ -94,12 +96,13 @@ class TStaticGE(object):
         for epoch in range(epochs):
             # for data in dataloader:
             loss = None
-            for step, batch_inp in next_datasets(self.A, self.L, batch_size=batch_size):
+            t1 = time()
+            for step, batch_inp in enumerate(dataloader):
                 A, L = batch_inp
-                A = torch.tensor(A)
-                L = torch.tensor(L)
-                x = Variable(A).to(device)
-                L = L.to(device)
+
+                # Trick here. TODO: check why A is (1,batch_size,number_nodes)
+                x = Variable(A[0]).to(device)
+                L = L[0].to(device)
                 # ===================forward=====================
                 optimizer.zero_grad()
 
@@ -111,7 +114,7 @@ class TStaticGE(object):
             # ===================log========================
             train_losses.append(round(float(loss), 4))
             if (epoch + 1) % skip_print == 0 or epoch == epochs - 1 or epoch == 0:
-                print('epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, epochs, loss))
+                print('Epoch [{}/{}] \t\tloss:{:.4f} \t\ttime:{:.2f}s'.format(epoch + 1, epochs, loss, time() - t1))
 
             if ck_config is not None:
                 save_custom_model(model=self.model, filepath=join(ck_config.FolderPath, f"graph_{ck_config.Index}"))
@@ -163,8 +166,8 @@ if __name__ == "__main__":
     G = get_graph_from_file(filename="../data/email-eu/email-Eu-core.txt")
     # G = nx.gnm_random_graph(n=15, m=30, seed=6)
     print_graph_stats(G)
-    draw_graph(G, limit_node=50)
-    pos = nx.spring_layout(G, seed=6)
+    # draw_graph(G, limit_node=50)
+    # pos = nx.spring_layout(G, seed=6)
     # print(G.edges)
 
     ge = TStaticGE(
@@ -176,10 +179,10 @@ if __name__ == "__main__":
     # ge = TStaticGE(G=G, embedding_dim=4, hidden_dims=[8], l2=1e-5, alpha=0.01, beta=6,
     #                activation='sigmoid')
     start_time = time()
-    ge.train(batch_size=256, epochs=2, skip_print=100,
-             learning_rate=0.0008, early_stop=200, threshold_loss=1e-4,
+    ge.train(batch_size=128, epochs=100, skip_print=10,
+             learning_rate=0.001, early_stop=200, threshold_loss=1e-4,
              plot_loss=True
-    )
+             )
 
     # ge.train(batch_size=128, epochs=10000, skip_print=500, learning_rate=0.001, early_stop=200, threshold_loss=1e-4)
     print(f"Finished in {round(time() - start_time, 2)}s")
@@ -187,9 +190,9 @@ if __name__ == "__main__":
     reconstructed_graph = ge.get_reconstruction()
     # print(reconstructed_graph)
     # classify_embeddings_evaluate(embeddings, label_file="../data/email-eu/email-Eu-core-department-labels.txt")
-    plot_embeddings_with_labels(G, embeddings=embeddings,
-                                path_file="../data/email-eu/email-Eu-core-department-labels.txt",
-                                save_path="../images/Email-static-ge")
+    # plot_embeddings_with_labels(G, embeddings=embeddings,
+    #                             path_file="../data/email-eu/email-Eu-core-department-labels.txt",
+    #                             save_path="../images/Email-static-ge")
 
     # save_custom_model(ge.get_model(), filepath="../models/email-eu/email-eu")
 

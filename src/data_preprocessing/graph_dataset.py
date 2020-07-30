@@ -16,27 +16,35 @@ from src.utils.graph_util import draw_graph
 class GraphDataset(Dataset):
     """Dynamic graph dataset"""
 
-    def __init__(self, A: sparse.csr_matrix, L: sparse.csr_matrix, transform=None):
-        self.dts_len = A.shape[0]
-        self.A = A
-        self.L = L
+    def __init__(self, A: sparse.csr_matrix, L: sparse.csr_matrix, batch_size=1):
+        '''
+        This is trick dataset for graph. I pass batch_size here so when training, DataLoader is always batch_size =1
+        :param A:
+        :param L:
+        :param batch_size:
+        '''
+        self.dts = []
+        dataset_size = A.shape[0]
+        steps_per_epoch = (dataset_size - 1) // batch_size + 1
+        for i in range(steps_per_epoch):
+            index = np.arange(
+                i * batch_size, min((i + 1) * batch_size, dataset_size))
+            A_train = A[index, :].todense()
+            L_train = L[index][:, index].todense()
+
+            A_train = torch.tensor(A_train)
+            L_train = torch.tensor(L_train)
+            batch_inp = [A_train, L_train]
+            self.dts.append(batch_inp)
 
     def __len__(self):
-        return self.dts_len
+        return len(self.dts)
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        A_train = list(self.A.getrow(idx).todense().flat)
-        L_train = list(self.L[idx][:, idx].todense().flat)
-
-        A_train = torch.tensor(A_train)
-        L_train = torch.tensor(L_train)
-
-        sample = [A_train, L_train]
-
-        return sample
+        return self.dts[idx]
 
 
 if __name__ == "__main__":

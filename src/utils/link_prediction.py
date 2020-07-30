@@ -79,6 +79,7 @@ def run_link_pred_evaluate(graph_df, embedding, alg=None, num_boost_round=10000,
     train_data = lightgbm.Dataset(X_train, y_train)
     test_data = lightgbm.Dataset(X_test, y_test)
 
+    # TODO: add GPU training
     # define parameters
     parameters = {
         'objective': 'binary',

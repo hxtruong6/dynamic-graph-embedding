@@ -41,7 +41,7 @@ class TDynGE(object):
 
     def train(self, prop_size=0.4, batch_size=64, epochs=100, folder_path="../models/generate/", skip_print=5,
               net2net_applied=False, learning_rate=0.001, checkpoint_config: CheckpointConfig = None,
-              from_loaded_model=False, early_stop=50, model_index=None
+              from_loaded_model=False, early_stop=50, model_index=None, plot_loss=False
               ):
         ck_config = None
         if not from_loaded_model:
@@ -67,7 +67,7 @@ class TDynGE(object):
             start_time = time()
 
             ge.train(batch_size=batch_size, epochs=epochs, skip_print=skip_print, learning_rate=learning_rate,
-                     ck_config=ck_config, early_stop=early_stop)
+                     ck_config=ck_config, early_stop=early_stop, plot_loss=plot_loss)
             print(f"Training time in {round(time() - start_time, 2)}s")
 
             self.static_ges.append(ge)
@@ -89,7 +89,7 @@ class TDynGE(object):
                     ck_config = deepcopy(checkpoint_config)
                     ck_config.Index = i
                 ge.train(batch_size=batch_size, epochs=epochs, skip_print=skip_print, learning_rate=learning_rate,
-                         ck_config=ck_config, early_stop=early_stop)
+                         ck_config=ck_config, early_stop=early_stop, plot_loss=plot_loss)
                 print(f"Training time in {round(time() - start_time, 2)}s")
 
                 self.static_ges.append(ge)
@@ -111,7 +111,7 @@ class TDynGE(object):
 
                 self.static_ges[model_index].train(batch_size=batch_size, epochs=epochs, skip_print=skip_print,
                                                    learning_rate=learning_rate, ck_config=ck_config,
-                                                   early_stop=early_stop)
+                                                   early_stop=early_stop, plot_loss=plot_loss)
                 print(f"Training time in {round(time() - start_time, 2)}s")
                 save_custom_model(model=self.static_ges[model_index].get_model(),
                                   filepath=join(folder_path, f"graph_{model_index}"))
@@ -124,7 +124,8 @@ class TDynGE(object):
                     start_time = time()
 
                     self.static_ges[i].train(batch_size=batch_size, epochs=epochs, skip_print=skip_print,
-                                             learning_rate=learning_rate, ck_config=ck_config, early_stop=early_stop)
+                                             learning_rate=learning_rate, ck_config=ck_config, early_stop=early_stop,
+                                             plot_loss=plot_loss)
                     print(f"Training time in {round(time() - start_time, 2)}s")
                     save_custom_model(model=self.static_ges[i].get_model(), filepath=join(folder_path, f"graph_{i}"))
 
@@ -160,7 +161,7 @@ if __name__ == "__main__":
     # dy_ge.load_models(folder_path="../models/generate")
     dy_ge.train(prop_size=0.4, epochs=100, skip_print=10, net2net_applied=False, learning_rate=0.003,
                 folder_path="../models/generate/", from_loaded_model=False, checkpoint_config=checkpoint_config,
-                early_stop=50)
+                early_stop=50, plot_loss=True)
 
     # dy_ge.train(prop_size=0.4, epochs=100, skip_print=5, net2net_applied=False, learning_rate=0.003,
     #             folder_path="../models/generate/", from_loaded_model=False, checkpoint_config=checkpoint_config, early_stop=50)
