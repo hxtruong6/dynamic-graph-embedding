@@ -1,0 +1,10 @@
+{
+  "input_dim": 15,
+  "embedding_dim": 128,
+  "hidden_dims": [
+    10,
+    69
+  ],
+  "l1": 0.001,
+  "l2": 0.0005
+}

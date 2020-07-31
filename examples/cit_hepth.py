@@ -37,55 +37,74 @@ if __name__ == "__main__":
         train_overall(lr=learning_rate_list[0])
 
         print("\n### ==\tOptimize model training == ###")
+
         start_time_train = time()
         for model_idx in range(len(G_partial_list)):
-            print(f"==========\t Model index = {model_idx} ============")
+            print(f"\n==========\t Model index = {model_idx} ============")
             for i, lr in enumerate(learning_rate_list):
+                is_load_from_previous_model = False
+                if i == 0:
+                    is_load_from_previous_model = True  # Always create from previous model if start training
                 print("\tLearning rate = ", lr)
-                dy_ge.train(prop_size=prop_size, epochs=epochs, skip_print=skip_print,
-                            net2net_applied=net2net_applied, learning_rate=lr,
-                            batch_size=batch_size, folder_path=weight_model_folder,
-                            ck_config=checkpoint_config, early_stop=early_stop,
-                            from_loaded_model=True, model_index=model_idx, is_load_previous=True)
-        print(f"Finish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
+                dy_ge.train_at(model_index=model_idx,
+                               prop_size=prop_size, epochs=epochs, skip_print=skip_print,
+                               net2net_applied=net2net_applied, learning_rate=lr,
+                               batch_size=batch_size, folder_path=weight_model_folder,
+                               ck_config=checkpoint_config, early_stop=early_stop,
+                               is_load_from_previous_model=is_load_from_previous_model)
+
+        print(f"\nFinish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
 
 
     def train_model_at_index():
-        print(f"==========\t Model index = {specific_model_index} ============")
+        '''
+        TODO: Should support for resuming train which continue train with learning_rate
+        :return:
+        '''
+        print(f"\n==========\t Model index = {specific_model_index} ============")
         start_time_train = time()
         for i, lr in enumerate(learning_rate_list):
+            is_load_from_previous_model = False
+            if i == 0:
+                is_load_from_previous_model = True  # Prevent re-train model
             print("\tLearning rate = ", lr)
-            dy_ge.train(prop_size=prop_size, epochs=epochs, skip_print=skip_print,
-                        net2net_applied=net2net_applied, learning_rate=lr,
-                        batch_size=batch_size, folder_path=weight_model_folder,
-                        ck_config=checkpoint_config, early_stop=early_stop,
-                        from_loaded_model=True, model_index=specific_model_index, is_load_previous=True)
+            dy_ge.train_at(model_index=specific_model_index,
+                           prop_size=prop_size, epochs=epochs, skip_print=skip_print,
+                           net2net_applied=net2net_applied, learning_rate=lr,
+                           batch_size=batch_size, folder_path=weight_model_folder,
+                           ck_config=checkpoint_config, early_stop=early_stop,
+                           is_load_from_previous_model=is_load_from_previous_model)
 
-        print(f"Finish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
+        print(f"\nFinish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
 
 
     # ----------- Run part --------------
     is_load_processed_data = True
-    is_run_training = True
+    is_just_load_model = False  # Load for link prediction -> Not training
     is_run_evaluate_link_prediction = False
-    is_just_load_model = False
-
     # ------------ Params -----------
-    folder_data = "../data/cit_hepth"
-    processed_data_folder = "../processed_data/cit_hepth"
-    weight_model_folder = "../models/cit_hepth"
+    folder_data = "./data/cit_hepth"
+    processed_data_folder = "./processed_data/cit_hepth"
+    weight_model_folder = "./models/cit_hepth"
 
-    epochs = 10
-    skip_print = 1
-    batch_size = 128  # 512
-    early_stop = 200  # 100
+    epochs = 200
+    skip_print = 20
+    batch_size = 512  # 512
+    early_stop = 100  # 100
     seed = 6
     prop_size = 0.35
 
     # empty if not need to train with list lr else priority
-    # learning_rate_list = [0.01, 0.005, 0.001, 0.0005, 1e-4, 5e-5, 1e-5]
-    learning_rate_list = [0.01, 0.005]  # empty if not need to train with list lr else priority
-    specific_model_index = None  # index here if you want to train just one model
+    learning_rate_list = [
+        # 0.005, 0.003, 0.001,
+        0.0005, 1e-4, 1e-4,
+        # 5e-5, 3e-5, 1e-5,
+        # 5e-6, 1e-6
+    ]
+    # learning_rate_list = [0.01]  # empty if not need to train with list lr else priority
+
+    # Default=None index here if you want to train just one model. If not it will run all dataset
+    specific_model_index = None  # must be order: 0,1,2,..
 
     alpha = 0.2
     beta = 10
@@ -108,15 +127,19 @@ if __name__ == "__main__":
     if not exists(weight_model_folder):
         os.makedirs(weight_model_folder)
 
+    # ==================== Data =========================
+    # graphs, idx2node = read_dynamic_graph(
+    #     folder_path=folder_data,
+    #     limit=None,
+    #     convert_to_idx=True
+    # )
+    g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
+    g2 = nx.gnm_random_graph(n=15, m=30, seed=6)
+    g3 = nx.gnm_random_graph(n=30, m=100, seed=6)
+
+    graphs = [g1, g2, g3]
+
     # =============================================
-    graphs, idx2node = read_dynamic_graph(
-        folder_path=folder_data,
-        limit=None,
-        convert_to_idx=True
-    )
-    # g1 = nx.gnm_random_graph(n=30, m=100, seed=6)
-    # g2 = nx.gnm_random_graph(n=60, m=200, seed=6)
-    # graphs = [g1, g2]
 
     print("Number graphs: ", len(graphs))
     print("Origin graphs:")
@@ -155,20 +178,19 @@ if __name__ == "__main__":
         print(f"Isolate nodes: {nx.number_of_isolates(g)}")
 
     # ----------- Training area -----------
-    if is_run_training:
-        dy_ge = TDynGE(
-            graphs=G_partial_list, embedding_dim=embedding_dim,
-            alpha=alpha, beta=beta, l1=l1, l2=l2
-        )
-        if specific_model_index is not None:
-            train_model_at_index()
-        elif is_just_load_model:
-            print("\n-----------\nStart load model...")
-            start_time = time()
-            dy_ge.load_models(folder_path=weight_model_folder)
-            print(f"Loaded model: {round(time() - start_time, 2)}s\n--------------\n")
-        else:
-            train_model()
+    dy_ge = TDynGE(
+        graphs=G_partial_list, embedding_dim=embedding_dim,
+        alpha=alpha, beta=beta, l1=l1, l2=l2
+    )
+    if is_just_load_model:
+        print("\n-----------\nStart load model...")
+        start_time = time()
+        dy_ge.load_models(folder_path=weight_model_folder)
+        print(f"Loaded model: {round(time() - start_time, 2)}s\n--------------\n")
+    elif specific_model_index is not None:
+        train_model_at_index()
+    else:
+        train_model()
 
     # ----- run evaluate link prediction -------
     if is_run_evaluate_link_prediction:

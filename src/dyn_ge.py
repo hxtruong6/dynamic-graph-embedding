@@ -57,10 +57,7 @@ class TDynGE(object):
 
     def _create_static_ge(self, index, folder_path, prop_size, net2net_applied):
         '''
-            Get static graph embedding. Always load model from previous model except index=0
-            With index=0:
-                If is_load_from_disk==True => load_from_disk
-                Else: => create new model
+            Static_ge is always create new weight for index = 0 and expand model for other index >0
         :param index:
         :param folder_path:
         :param prop_size:
@@ -98,69 +95,53 @@ class TDynGE(object):
 
     def train(self, folder_path, prop_size=0.4, batch_size=64, epochs=100, skip_print=5,
               net2net_applied=False, learning_rate=0.001, ck_config: CheckpointConfig = None,
-              from_loaded_model=False, early_stop=50, model_index=None, plot_loss=False, is_load_previous=False):
-        if not from_loaded_model:
-            # Create folder for saving model if not existed
-            if not exists(folder_path):
-                os.makedirs(folder_path)
+              early_stop=50, plot_loss=False):
+        # Create folder for saving model if not existed
+        if not exists(folder_path):
+            os.makedirs(folder_path)
 
-            for i in range(len(self.graphs)):
-                ge = self._create_static_ge(index=i, folder_path=folder_path, prop_size=prop_size,
-                                            net2net_applied=net2net_applied)
-                self.static_ges.append(ge)
+        for i in range(len(self.graphs)):
+            ge = self._create_static_ge(index=i, folder_path=folder_path, prop_size=prop_size,
+                                        net2net_applied=net2net_applied)
+            self.static_ges.append(ge)
 
-                if ck_config is not None:
-                    ck_config = deepcopy(ck_config).set_index(index=i)
+            if ck_config is not None:
+                ck_config = deepcopy(ck_config).set_index(index=i)
 
-                print(f"\t--- Training graph {i} ---")
-                training_time = self._train_model(dy_ge_idx=i, filepath=join(folder_path, f"graph_{i}"),
-                                                  batch_size=batch_size, epochs=epochs, learning_rate=learning_rate,
-                                                  skip_print=skip_print, early_stop=early_stop, plot_loss=plot_loss,
-                                                  ck_config=ck_config)
-                print(f"Training time in {training_time}s")
+            print(f"\t--- Training graph {i} ---")
+            training_time = self._train_model(dy_ge_idx=i, filepath=join(folder_path, f"graph_{i}"),
+                                              batch_size=batch_size, epochs=epochs, learning_rate=learning_rate,
+                                              skip_print=skip_print, early_stop=early_stop, plot_loss=plot_loss,
+                                              ck_config=ck_config)
+            print(f"Training time in {training_time}s")
 
-        else:
-            if not exists(folder_path):
-                raise ValueError(f"{folder_path} is invalid path.")
+    def train_at(self, model_index, folder_path, prop_size=0.4, batch_size=64, epochs=100, skip_print=5,
+                 net2net_applied=False, learning_rate=0.001, ck_config: CheckpointConfig = None,
+                 early_stop=50, plot_loss=False, is_load_from_previous_model=False):
+        if not exists(folder_path):
+            raise ValueError(f"{folder_path} is invalid path.")
 
-            # Check dyn_ge have model
-            if len(self.static_ges) == 0:
-                self.load_models(folder_path=folder_path)
+        if len(self.static_ges) == 0:
+            self.load_models(folder_path=folder_path)
 
-            if model_index is not None:
-                if model_index >= len(self.static_ges):
-                    raise ValueError("model_index is invalid!")
+        if model_index >= len(self.static_ges):
+            raise ValueError(f"{model_index} is out of range")
 
-                if is_load_previous and model_index > 0:
-                    self.static_ges[model_index] = self._create_static_ge(index=model_index, folder_path=folder_path,
-                                                                          prop_size=prop_size,
-                                                                          net2net_applied=net2net_applied)
-                if ck_config is not None:
-                    ck_config = deepcopy(ck_config).set_index(index=model_index)
+        if is_load_from_previous_model:  # for begin training -> create new model to train
+            self.static_ges[model_index] = self._create_static_ge(index=model_index, folder_path=folder_path,
+                                                                  prop_size=prop_size,
+                                                                  net2net_applied=net2net_applied)
 
-                print(f"\t---* Training graph {model_index} ---")
-                training_time = self._train_model(dy_ge_idx=model_index,
-                                                  filepath=join(folder_path, f"graph_{model_index}"),
-                                                  batch_size=batch_size, epochs=epochs, learning_rate=learning_rate,
-                                                  skip_print=skip_print, early_stop=early_stop, plot_loss=plot_loss,
-                                                  ck_config=ck_config)
-                print(f"Training time in {training_time}s")
-            else:
-                for i in range(len(self.graphs)):
-                    # i>0 because i=0 always load from trained model
-                    if is_load_previous and i > 0:
-                        self.static_ges[i] = self._create_static_ge(index=i, folder_path=folder_path,
-                                                                    prop_size=prop_size,
-                                                                    net2net_applied=net2net_applied)
-                    if ck_config is not None:
-                        ck_config = deepcopy(ck_config).set_index(index=i)
+        # Else for resume training
+        if ck_config is not None:
+            ck_config = deepcopy(ck_config).set_index(index=model_index)
 
-                    print(f"\t---* Training graph {i} ---")
-                    training_time = self._train_model(dy_ge_idx=i, filepath=join(folder_path, f"graph_{i}"),
-                                                      batch_size=batch_size, epochs=epochs, learning_rate=learning_rate,
-                                                      skip_print=skip_print, early_stop=early_stop, plot_loss=plot_loss,
-                                                      ck_config=ck_config)
-                    print(f"Training time in {training_time}s")
+        print(f"\t--- Training graph {model_index} ---")
+        training_time = self._train_model(dy_ge_idx=model_index, filepath=join(folder_path, f"graph_{model_index}"),
+                                          batch_size=batch_size, epochs=epochs, learning_rate=learning_rate,
+                                          skip_print=skip_print, early_stop=early_stop, plot_loss=plot_loss,
+                                          ck_config=ck_config)
+        print(f"Training time in {training_time}s")
 
     def load_models(self, folder_path):
         print("Loading models...", end=" ")
@@ -170,6 +151,9 @@ class TDynGE(object):
         # Trick for get length of saved models
         files = [f for f in listdir(folder_path) if isfile(join(folder_path, f))]
         length = int(len(files) / 2)
+
+        if length != len(self.graphs):
+            raise Exception("There are NO saved training data")
 
         for i in range(length):
             filepath = join(folder_path, f"graph_{i}")
@@ -191,10 +175,14 @@ if __name__ == "__main__":
     # graphs, _ = read_dynamic_graph(folder_path="../data/cit_hepth", convert_to_idx=True, limit=1)
 
     dy_ge = TDynGE(graphs=graphs, embedding_dim=2)
-    # dy_ge.load_models(folder_path="../models/generate")
+    dy_ge.load_models(folder_path="../models/generate")
     dy_ge.train(prop_size=0.4, epochs=100, skip_print=20, net2net_applied=False, learning_rate=0.003,
-                folder_path="../models/generate/", from_loaded_model=False, ck_config=ck_config,
-                early_stop=50, plot_loss=True, model_index=1, is_load_previous=True)
+                folder_path="../models/generate/", ck_config=ck_config,
+                early_stop=50, plot_loss=True)
+
+    # dy_ge.train_at(model_index=1, prop_size=0.4, epochs=100, skip_print=20, net2net_applied=False, learning_rate=0.003,
+    #                folder_path="../models/generate/", ck_config=ck_config,
+    #                early_stop=50, plot_loss=True, is_load_from_previous_model=True)
 
     # dy_ge.train(prop_size=0.4, epochs=100, skip_print=5, net2net_applied=False, learning_rate=0.003,
     #             folder_path="../models/generate/", from_loaded_model=False, checkpoint_config=checkpoint_config, early_stop=50)
