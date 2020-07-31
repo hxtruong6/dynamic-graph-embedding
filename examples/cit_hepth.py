@@ -114,14 +114,14 @@ if __name__ == "__main__":
         os.makedirs(weight_model_folder)
 
     # =============================================
-    graphs, idx2node = read_dynamic_graph(
-        folder_path=folder_data,
-        limit=None,
-        convert_to_idx=True
-    )
-    # g1 = nx.gnm_random_graph(n=30, m=100, seed=6)
-    # g2 = nx.gnm_random_graph(n=60, m=200, seed=6)
-    # graphs = [g1, g2]
+    # graphs, idx2node = read_dynamic_graph(
+    #     folder_path=folder_data,
+    #     limit=None,
+    #     convert_to_idx=True
+    # )
+    g1 = nx.gnm_random_graph(n=30, m=100, seed=6)
+    g2 = nx.gnm_random_graph(n=60, m=200, seed=6)
+    graphs = [g1, g2]
 
     print("Number graphs: ", len(graphs))
     print("Origin graphs:")

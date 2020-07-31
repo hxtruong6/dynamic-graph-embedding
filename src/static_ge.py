@@ -20,7 +20,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class TStaticGE(object):
     def __init__(self, G: nx.Graph, embedding_dim=None, hidden_dims=None, model: TAutoencoder = None,
-                 alpha=0.01, beta=2, l1=0.0, l2=1e-5, activation='sigmoid'):
+                 alpha=0.2, beta=8, l1=0., l2=1e-5, activation='sigmoid'):
         super(TStaticGE, self).__init__()
         if hidden_dims is None:
             hidden_dims = []

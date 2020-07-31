@@ -9,28 +9,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-def get_unconnected_pairs(G: nx.Graph):
-    # TODO: convert to sparse matrix
-    node_list = list(G.nodes())
-    adj_G = nx.adj_matrix(G)
-
-    # get unconnected node-pairs
-    all_unconnected_pairs = []
-
-    # traverse adjacency matrix. find all unconnected node with maximum 2nd order
-    offset = 0
-    for i in tqdm(range(adj_G.shape[0])):
-        for j in range(offset, adj_G.shape[1]):
-            if i != j:
-                if nx.shortest_path_length(G, i, j) <= 2:
-                    if adj_G[i, j] == 0:
-                        all_unconnected_pairs.append([node_list[i], node_list[j]])
-
-        offset = offset + 1
-
-    return all_unconnected_pairs
-
-
 def get_unconnected_pairs_(G: nx.Graph, k_length=2):
     edges_len = dict(nx.all_pairs_shortest_path_length(G, cutoff=k_length))
 

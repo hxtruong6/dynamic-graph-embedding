@@ -3,3 +3,6 @@ class CheckpointConfig:
         self.NumberSaved = number_saved
         self.FolderPath = folder_path
         self.Index = index
+
+    def set_index(self, index):
+        self.Index = index
