@@ -109,12 +109,14 @@ class TDynGE(object):
                                             net2net_applied=net2net_applied)
                 self.static_ges.append(ge)
 
-                _ck_config = deepcopy(ck_config).set_index(index=i)
+                if ck_config is not None:
+                    ck_config = deepcopy(ck_config).set_index(index=i)
+
                 print(f"\t--- Training graph {i} ---")
                 training_time = self._train_model(dy_ge_idx=i, filepath=join(folder_path, f"graph_{i}"),
                                                   batch_size=batch_size, epochs=epochs, learning_rate=learning_rate,
                                                   skip_print=skip_print, early_stop=early_stop, plot_loss=plot_loss,
-                                                  ck_config=_ck_config)
+                                                  ck_config=ck_config)
                 print(f"Training time in {training_time}s")
 
         else:
@@ -133,14 +135,15 @@ class TDynGE(object):
                     self.static_ges[model_index] = self._create_static_ge(index=model_index, folder_path=folder_path,
                                                                           prop_size=prop_size,
                                                                           net2net_applied=net2net_applied)
+                if ck_config is not None:
+                    ck_config = deepcopy(ck_config).set_index(index=model_index)
 
-                _ck_config = deepcopy(ck_config).set_index(index=model_index)
                 print(f"\t---* Training graph {model_index} ---")
                 training_time = self._train_model(dy_ge_idx=model_index,
                                                   filepath=join(folder_path, f"graph_{model_index}"),
                                                   batch_size=batch_size, epochs=epochs, learning_rate=learning_rate,
                                                   skip_print=skip_print, early_stop=early_stop, plot_loss=plot_loss,
-                                                  ck_config=_ck_config)
+                                                  ck_config=ck_config)
                 print(f"Training time in {training_time}s")
             else:
                 for i in range(len(self.graphs)):
@@ -149,13 +152,14 @@ class TDynGE(object):
                         self.static_ges[i] = self._create_static_ge(index=i, folder_path=folder_path,
                                                                     prop_size=prop_size,
                                                                     net2net_applied=net2net_applied)
+                    if ck_config is not None:
+                        ck_config = deepcopy(ck_config).set_index(index=i)
 
-                    _ck_config = deepcopy(ck_config).set_index(index=i)
                     print(f"\t---* Training graph {i} ---")
                     training_time = self._train_model(dy_ge_idx=i, filepath=join(folder_path, f"graph_{i}"),
                                                       batch_size=batch_size, epochs=epochs, learning_rate=learning_rate,
                                                       skip_print=skip_print, early_stop=early_stop, plot_loss=plot_loss,
-                                                      ck_config=_ck_config)
+                                                      ck_config=ck_config)
                     print(f"Training time in {training_time}s")
 
     def load_models(self, folder_path):
@@ -184,12 +188,12 @@ if __name__ == "__main__":
 
     ck_config = CheckpointConfig(number_saved=10, folder_path="../models/generate_ck")
 
-    # graphs, _ = read_dynamic_graph(folder_path="../data/fb", convert_to_idx=True, limit=1)
+    # graphs, _ = read_dynamic_graph(folder_path="../data/cit_hepth", convert_to_idx=True, limit=1)
 
     dy_ge = TDynGE(graphs=graphs, embedding_dim=2)
     # dy_ge.load_models(folder_path="../models/generate")
     dy_ge.train(prop_size=0.4, epochs=100, skip_print=20, net2net_applied=False, learning_rate=0.003,
-                folder_path="../models/generate/", from_loaded_model=True, ck_config=ck_config,
+                folder_path="../models/generate/", from_loaded_model=False, ck_config=ck_config,
                 early_stop=50, plot_loss=True, model_index=1, is_load_previous=True)
 
     # dy_ge.train(prop_size=0.4, epochs=100, skip_print=5, net2net_applied=False, learning_rate=0.003,

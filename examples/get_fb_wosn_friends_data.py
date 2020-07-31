@@ -29,8 +29,8 @@ import os
 """# Download"""
 
 link_dts = 'http://nrvis.com/download/data/dynamic/fb-wosn-friends.zip'
-dts_zip = 'fb-wosn-friends.zip'
-dts_name = 'fb-wosn-friends.edges'
+dts_zip = 'cit_hepth-wosn-friends.zip'
+dts_name = 'cit_hepth-wosn-friends.edges'
 
 r1 = requests.get(link_dts, allow_redirects=True)
 open(dts_zip, 'wb').write(r1.content)
@@ -95,7 +95,7 @@ for i in range(k):
 NUMBER_SAVE_GRAPH = 8
 
 # TODO: check folder address before running
-folder = "./data/fb"
+folder = "./data/cit_hepth"
 if not os.path.exists(folder):
     os.makedirs(folder)
 

@@ -34,7 +34,6 @@ def get_unconnected_pairs_(G: nx.Graph, k_length=2):
 
 
 def run_link_pred_evaluate(graph_df, embedding, alg=None, num_boost_round=10000, early_stopping_rounds=100):
-    print("--> Run link predict evaluation ---")
     if alg == "Node2Vec":
         x = [(embedding[str(i)] + embedding[str(j)]) for i, j in zip(graph_df['node_1'], graph_df['node_2'])]
     else:

@@ -65,9 +65,9 @@ if __name__ == "__main__":
 
 
     # ------------ Params -----------
-    folder_data = "../data/fb"
-    processed_data_folder = "../processed_data/fb"
-    weight_model_folder = "../models/fb"
+    folder_data = "../data/cit_hepth"
+    processed_data_folder = "../processed_data/cit_hepth"
+    weight_model_folder = "../models/cit_hepth"
     load_model = False
     load_processed_data = True
     train_from_loaded_model = False
