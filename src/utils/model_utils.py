@@ -8,6 +8,8 @@ import torch
 
 from src.utils.autoencoder import TAutoencoder
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def get_hidden_layer(prop_size, input_dim, embedding_dim):
     hidden_dims = [input_dim]
@@ -93,7 +95,7 @@ def load_custom_model(filepath):
     )
 
     model_path = filepath + ".pt"
-    model.load_state_dict(torch.load(model_path))
+    model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
     return model
 

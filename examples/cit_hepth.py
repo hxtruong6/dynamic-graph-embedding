@@ -31,6 +31,7 @@ if __name__ == "__main__":
 
 
     def train_model():
+        # global batch_size
         print("\n-----------\nStart total training...")
 
         print("Overall training")
@@ -40,6 +41,8 @@ if __name__ == "__main__":
 
         start_time_train = time()
         for model_idx in range(len(G_partial_list)):
+            # if model_idx in [3, 4]: # Set manually to prevent out of RAM
+            #     batch_size = batch_size / 2
             print(f"\n==========\t Model index = {model_idx} ============")
             for i, lr in enumerate(learning_rate_list):
                 is_load_from_previous_model = False
@@ -96,7 +99,6 @@ if __name__ == "__main__":
 
     # empty if not need to train with list lr else priority
     learning_rate_list = [
-        # 0.005, 0.003, 0.001,
         0.0005, 1e-4, 1e-4,
         # 5e-5, 3e-5, 1e-5,
         # 5e-6, 1e-6
