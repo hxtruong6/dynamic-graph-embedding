@@ -180,6 +180,24 @@ class TDynGE(object):
             self.static_ges.append(ge)
         print(f"{round(time() - start_time, 2)}s")
 
+    def save_embeddings(self, folder_path):
+        if not exists(folder_path):
+            os.makedirs(folder_path)
+        for idx, ge in enumerate(self.static_ges):
+            ge: TStaticGE
+            ge.save_embedding(filepath=join(folder_path, f"_{idx}"))
+
+    def load_embedding(self, folder_path):
+        if not exists(folder_path):
+            raise ValueError("Folder is invalid.")
+
+        embeddings = []
+        for idx, ge in enumerate(self.static_ges):
+            ge: TStaticGE
+            embedding = ge.load_embedding(filepath=join(folder_path, f"_{idx}"))
+            embeddings.append(embedding)
+        return embeddings
+
 
 if __name__ == "__main__":
     g1 = nx.gnm_random_graph(n=5, m=5, seed=6)

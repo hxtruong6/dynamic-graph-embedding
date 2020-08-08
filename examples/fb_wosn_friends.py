@@ -170,7 +170,7 @@ if __name__ == "__main__":
         G_df = G_dfs[i]
         link_pred_model = run_link_pred_evaluate(
             graph_df=G_df,
-            embedding=dy_embeddings[i],
+            embeddings=dy_embeddings[i],
             num_boost_round=20000
         )
         possible_edges_df = G_df[G_df['link'] == 0]

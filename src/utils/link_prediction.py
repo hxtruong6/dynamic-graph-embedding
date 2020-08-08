@@ -33,11 +33,11 @@ def get_unconnected_pairs_(G: nx.Graph, k_length=2):
     return unconnected_pairs
 
 
-def run_link_pred_evaluate(graph_df, embedding, alg=None, num_boost_round=10000, early_stopping_rounds=100):
+def run_link_pred_evaluate(graph_df, embeddings, alg=None, num_boost_round=10000, early_stopping_rounds=100):
     if alg == "Node2Vec":
-        x = [(embedding[str(i)] + embedding[str(j)]) for i, j in zip(graph_df['node_1'], graph_df['node_2'])]
+        x = [(embeddings[str(i)] + embeddings[str(j)]) for i, j in zip(graph_df['node_1'], graph_df['node_2'])]
     else:
-        x = [(embedding[i] + embedding[j]) for i, j in zip(graph_df['node_1'], graph_df['node_2'])]
+        x = [(embeddings[i] + embeddings[j]) for i, j in zip(graph_df['node_1'], graph_df['node_2'])]
 
     # TODO: check unbalance dataset
     X_train, X_test, y_train, y_test = train_test_split(

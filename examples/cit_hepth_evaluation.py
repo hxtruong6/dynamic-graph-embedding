@@ -4,81 +4,20 @@ from os.path import join, exists, isfile
 from time import time
 import numpy as np
 import networkx as nx
-import pandas as pd
 import warnings
 
 from src.data_preprocessing.graph_preprocessing import read_dynamic_graph, get_graph_from_file
 from src.utils.checkpoint_config import CheckpointConfig
 from src.utils.data_utils import load_processed_data, save_processed_data
 from src.utils.stable_evaluate import stability_constant
-
-warnings.filterwarnings("ignore")
-
 from src.dyn_ge import TDynGE
 from src.utils.graph_util import graph_to_graph_idx, print_graph_stats, draw_graph
 from src.utils.link_prediction import preprocessing_graph_for_link_prediction, run_link_pred_evaluate, run_predict, \
     top_k_prediction_edges
 
+warnings.filterwarnings("ignore")
+
 if __name__ == "__main__":
-    # If model_idx -> must be train from previous model
-    def train_overall(lr):
-        '''
-        Method to create saved model on disk for later optimizer
-        :return:
-        '''
-        dy_ge.train(prop_size=prop_size, epochs=1, skip_print=1,
-                    net2net_applied=net2net_applied, learning_rate=lr,
-                    batch_size=batch_size, folder_path=weight_model_folder)
-
-
-    def train_model():
-        print("\n-----------\nStart total training...")
-
-        print("Overall training")
-        train_overall(lr=learning_rate_list[0])
-
-        print("\n### ==\tOptimize model training == ###")
-
-        start_time_train = time()
-        for model_idx in range(len(G_partial_list)):
-            print(f"\n==========\t Model index = {model_idx} ============")
-            for i, lr in enumerate(learning_rate_list):
-                is_load_from_previous_model = False
-                if i == 0:
-                    is_load_from_previous_model = True  # Always create from previous model if start training
-                print("\tLearning rate = ", lr)
-                dy_ge.train_at(model_index=model_idx,
-                               prop_size=prop_size, epochs=epochs, skip_print=skip_print,
-                               net2net_applied=net2net_applied, learning_rate=lr,
-                               batch_size=batch_size, folder_path=weight_model_folder,
-                               ck_config=checkpoint_config, early_stop=early_stop,
-                               is_load_from_previous_model=is_load_from_previous_model)
-
-        print(f"\nFinish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
-
-
-    def train_model_at_index():
-        '''
-        TODO: Should support for resuming train which continue train with learning_rate
-        :return:
-        '''
-        print(f"\n==========\t Model index = {specific_model_index} ============")
-        start_time_train = time()
-        for i, lr in enumerate(learning_rate_list):
-            is_load_from_previous_model = False
-            if i == 0:
-                is_load_from_previous_model = True  # Prevent re-train model
-            print("\tLearning rate = ", lr)
-            dy_ge.train_at(model_index=specific_model_index,
-                           prop_size=prop_size, epochs=epochs, skip_print=skip_print,
-                           net2net_applied=net2net_applied, learning_rate=lr,
-                           batch_size=batch_size, folder_path=weight_model_folder,
-                           ck_config=checkpoint_config, early_stop=early_stop,
-                           is_load_from_previous_model=is_load_from_previous_model)
-
-        print(f"\nFinish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
-
-
     def check_current_loss_model():
         for model_idx in range(len(G_partial_list)):
             dy_ge.train_at(model_index=model_idx,
@@ -90,15 +29,12 @@ if __name__ == "__main__":
 
 
     # ----------- Run part --------------
-    is_load_processed_data = True
-    is_just_load_model = True  # Set True to run evaluate faster. If not: train->evaluate
     is_run_stability_constant = False
     is_run_evaluate_link_prediction = False
     # ------------ Params -----------
     folder_data = "../data/cit_hepth"
     processed_data_folder = "../processed_data/cit_hepth"
     weight_model_folder = "../models/cit_hepth"
-    embeddings_folder = "../embeddings/cit_hepth"
 
     epochs = 200
     skip_print = 20
@@ -133,15 +69,8 @@ if __name__ == "__main__":
 
     # ====================== Settings =================
     np.random.seed(seed=seed)
-    if not exists(processed_data_folder):
-        os.makedirs(processed_data_folder)
-
-    if not exists(weight_model_folder):
-        os.makedirs(weight_model_folder)
-
-    if not exists(embeddings_folder):
-        os.makedirs(embeddings_folder)
-
+    if not exists(processed_data_folder) or not exists(weight_model_folder):
+        raise ValueError("Lack of processed data and trained model")
     # ==================== Data =========================
     graphs, idx2node = read_dynamic_graph(
         folder_path=folder_data,
@@ -163,29 +92,8 @@ if __name__ == "__main__":
         print(f"Isolate nodes: {nx.number_of_isolates(g)}")
         # draw_graph(g, limit_node=25)
 
-    if is_load_processed_data:
-        print("Load processed data from disk...")
-        G_dfs, G_partial_list = load_processed_data(folder=processed_data_folder)
-    else:
-        print("\n[ALL] Pre-processing graph for link prediction...")
-        G_dfs = []
-        G_partial_list = []
-        start_time = time()
-        for idx, g in enumerate(graphs):
-            print(f"==== Graph {idx}: ")
-            g_df, g_partial = preprocessing_graph_for_link_prediction(
-                G=g, k_length=2,
-                drop_node_percent=drop_node_percent
-            )
-            G_dfs.append(g_df)
-            G_partial_list.append(g_partial)
-
-            # Save processed data.
-            # NOTE: save idx graph. Not original graph
-            save_processed_data(g_df, g_partial, folder=processed_data_folder, index=idx)
-            # draw_graph(g=g_partial, limit_node=25)
-
-        print(f"[ALL] Processed in {round(time() - start_time, 2)}s\n")
+    print("Load processed data from disk...")
+    G_dfs, G_partial_list = load_processed_data(folder=processed_data_folder)
 
     print("After processing for link prediction graphs:")
     for i, g in enumerate(G_partial_list):
@@ -197,18 +105,14 @@ if __name__ == "__main__":
         graphs=G_partial_list, embedding_dim=embedding_dim,
         alpha=alpha, beta=beta, l1=l1, l2=l2
     )
-    if is_just_load_model:
-        print("\n-----------\nStart load model...")
-        start_time = time()
-        dy_ge.load_models(folder_path=weight_model_folder)
-        print(f"Loaded model: {round(time() - start_time, 2)}s\n--------------\n")
-    elif specific_model_index is not None:
-        train_model_at_index()
-    else:
-        train_model()
-    dy_ge.save_embeddings(folder_path=embeddings_folder)
+
+    print("\n-----------\nStart load model...")
+    start_time = time()
+    dy_ge.load_models(folder_path=weight_model_folder)
+    print(f"Loaded model: {round(time() - start_time, 2)}s\n--------------\n")
 
     # Uncomment to know current loss value
+    print("Check current loss value of model: ")
     check_current_loss_model()
 
     # -------- Stability constant -------------
@@ -232,5 +136,5 @@ if __name__ == "__main__":
             top_k_edges = top_k_prediction_edges(
                 G=graphs[i], y_pred=y_pred, possible_edges_df=possible_edges_df,
                 top_k=top_k, show_acc_on_edge=show_acc_on_edge,
-                plot_link_pred=True, limit_node=25
+                plot_link_pred=False, limit_node=25,
             )

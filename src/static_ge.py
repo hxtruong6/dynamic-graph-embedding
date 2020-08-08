@@ -1,3 +1,4 @@
+import pickle
 from os.path import join
 from time import time
 import networkx as nx
@@ -56,6 +57,7 @@ class TStaticGE(object):
         self.A: sparse.csr_matrix
         self.L: sparse.csr_matrix
         self.A, self.L = self._create_A_L_matrix()
+        self.embedding = None
 
     def _create_A_L_matrix(self):
         A = nx.to_scipy_sparse_matrix(self.G, format='csr').astype(np.float32)
@@ -147,6 +149,7 @@ class TStaticGE(object):
         with torch.no_grad():
             embedding = self.model.cpu().get_embedding(x=x)
         torch.cuda.empty_cache()
+        self.embedding = embedding
         return embedding
 
     def get_reconstruction(self, x=None):
@@ -160,6 +163,17 @@ class TStaticGE(object):
 
     def get_model(self):
         return self.model.cpu()
+
+    def save_embedding(self, filepath):
+        if self.embedding is None:
+            self.embedding = self.get_embedding()
+        with open(filepath, 'wb') as fp:
+            pickle.dump(self.embedding, fp)
+
+    def load_embedding(self, filepath):
+        with open(filepath, 'rb') as fp:
+            self.embedding = pickle.load(fp)
+        return self.embedding
 
 
 if __name__ == "__main__":

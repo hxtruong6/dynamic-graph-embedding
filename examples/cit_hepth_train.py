@@ -98,7 +98,6 @@ if __name__ == "__main__":
     folder_data = "../data/cit_hepth"
     processed_data_folder = "../processed_data/cit_hepth"
     weight_model_folder = "../models/cit_hepth"
-    embeddings_folder = "../embeddings/cit_hepth"
 
     epochs = 200
     skip_print = 20
@@ -138,9 +137,6 @@ if __name__ == "__main__":
 
     if not exists(weight_model_folder):
         os.makedirs(weight_model_folder)
-
-    if not exists(embeddings_folder):
-        os.makedirs(embeddings_folder)
 
     # ==================== Data =========================
     graphs, idx2node = read_dynamic_graph(
@@ -206,7 +202,6 @@ if __name__ == "__main__":
         train_model_at_index()
     else:
         train_model()
-    dy_ge.save_embeddings(folder_path=embeddings_folder)
 
     # Uncomment to know current loss value
     check_current_loss_model()
