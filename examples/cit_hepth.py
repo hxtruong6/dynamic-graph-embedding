@@ -10,6 +10,7 @@ import warnings
 from src.data_preprocessing.graph_preprocessing import read_dynamic_graph, get_graph_from_file
 from src.utils.checkpoint_config import CheckpointConfig
 from src.utils.data_utils import load_processed_data, save_processed_data
+from src.utils.stable_evaluate import stability_constant
 
 warnings.filterwarnings("ignore")
 
@@ -31,7 +32,6 @@ if __name__ == "__main__":
 
 
     def train_model():
-        # global batch_size
         print("\n-----------\nStart total training...")
 
         print("Overall training")
@@ -41,8 +41,6 @@ if __name__ == "__main__":
 
         start_time_train = time()
         for model_idx in range(len(G_partial_list)):
-            # if model_idx in [3, 4]: # Set manually to prevent out of RAM
-            #     batch_size = batch_size / 2
             print(f"\n==========\t Model index = {model_idx} ============")
             for i, lr in enumerate(learning_rate_list):
                 is_load_from_previous_model = False
@@ -81,14 +79,25 @@ if __name__ == "__main__":
         print(f"\nFinish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
 
 
+    def check_current_loss_model():
+        for model_idx in range(len(G_partial_list)):
+            dy_ge.train_at(model_index=model_idx,
+                           prop_size=prop_size, epochs=1, skip_print=skip_print,
+                           net2net_applied=net2net_applied, learning_rate=1e-6,
+                           batch_size=batch_size, folder_path=weight_model_folder,
+                           ck_config=checkpoint_config, early_stop=early_stop,
+                           is_load_from_previous_model=False)
+
+
     # ----------- Run part --------------
     is_load_processed_data = True
-    is_just_load_model = False  # Load for link prediction -> Not training
+    is_just_load_model = True  # Set True to run evaluate faster. If not: train->evaluate
+    is_run_stability_constant = False
     is_run_evaluate_link_prediction = False
     # ------------ Params -----------
-    folder_data = "./data/cit_hepth"
-    processed_data_folder = "./processed_data/cit_hepth"
-    weight_model_folder = "./models/cit_hepth"
+    folder_data = "../data/cit_hepth"
+    processed_data_folder = "../processed_data/cit_hepth"
+    weight_model_folder = "../models/cit_hepth"
 
     epochs = 200
     skip_print = 20
@@ -130,16 +139,16 @@ if __name__ == "__main__":
         os.makedirs(weight_model_folder)
 
     # ==================== Data =========================
-    # graphs, idx2node = read_dynamic_graph(
-    #     folder_path=folder_data,
-    #     limit=None,
-    #     convert_to_idx=True
-    # )
-    g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
-    g2 = nx.gnm_random_graph(n=15, m=30, seed=6)
-    g3 = nx.gnm_random_graph(n=30, m=100, seed=6)
-
-    graphs = [g1, g2, g3]
+    graphs, idx2node = read_dynamic_graph(
+        folder_path=folder_data,
+        limit=None,
+        convert_to_idx=True
+    )
+    # g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
+    # g2 = nx.gnm_random_graph(n=15, m=30, seed=6)
+    # g3 = nx.gnm_random_graph(n=30, m=100, seed=6)
+    #
+    # graphs = [g1, g2, g3]
 
     # =============================================
 
@@ -193,6 +202,14 @@ if __name__ == "__main__":
         train_model_at_index()
     else:
         train_model()
+
+    # Uncomment to know current loss value
+    check_current_loss_model()
+
+    # -------- Stability constant -------------
+    if is_run_stability_constant:
+        dy_embeddings = dy_ge.get_all_embeddings()
+        print(f"Stability constant= {stability_constant(graphs=G_partial_list, embeddings=dy_embeddings)}")
 
     # ----- run evaluate link prediction -------
     if is_run_evaluate_link_prediction:

@@ -118,6 +118,23 @@ class TDynGE(object):
     def train_at(self, model_index, folder_path, prop_size=0.4, batch_size=64, epochs=100, skip_print=5,
                  net2net_applied=False, learning_rate=0.001, ck_config: CheckpointConfig = None,
                  early_stop=50, plot_loss=False, is_load_from_previous_model=False):
+        '''
+        To training a specific model.
+        :param model_index:
+        :param folder_path:
+        :param prop_size:
+        :param batch_size:
+        :param epochs:
+        :param skip_print:
+        :param net2net_applied:
+        :param learning_rate:
+        :param ck_config:
+        :param early_stop:
+        :param plot_loss:
+        :param is_load_from_previous_model: for training new weight from previous model.
+                If NOT, model will continue (resume) training
+        :return:
+        '''
         if not exists(folder_path):
             raise ValueError(f"{folder_path} is invalid path.")
 
