@@ -131,7 +131,8 @@ def run_predict(data, embedding, model):
 
 
 # https://www.analyticsvidhya.com/blog/2020/01/link-prediction-how-to-predict-your-future-connections-on-facebook/
-def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_percent=1):
+def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_percent=1, seed=6):
+    np.random.seed(seed)
     print("Pre-processing graph for link prediction...")
     start_time = time()
 
@@ -174,6 +175,13 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_p
     removed_edge_graph_df = pd.DataFrame(data=omissible_links, columns=['node_1', 'node_2'])
     removed_edge_graph_df['link'] = 1  # add the target variable 'link'
     print(f"{round(time() - temp_time)}s")
+
+    print("Random drop some unconnected link")
+    print("Before drop length graph_df = ", len(graph_df))
+    remove_n = len(graph_df) - len(removed_edge_graph_df) * 9
+    drop_indices = np.random.choice(graph_df.index, remove_n, replace=False)
+    graph_df = graph_df.drop(drop_indices)
+    print("After drop length graph_df = ", len(graph_df))
 
     print("\tCreate data frame have potential links and removed link.")
     graph_df = graph_df.append(removed_edge_graph_df[['node_1', 'node_2', 'link']], ignore_index=True)
