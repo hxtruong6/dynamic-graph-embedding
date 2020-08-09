@@ -9,12 +9,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-def get_unconnected_pairs_(G: nx.Graph, k_length=2):
+def get_unconnected_pairs_(G: nx.Graph, k_length=2, n_limit=None):
     edges_len = dict(nx.all_pairs_shortest_path_length(G, cutoff=k_length))
 
     unconnected_pairs = []
     appended_pairs = {}
-    for u in G.nodes():
+
+    nodes = list(G.nodes())
+    np.random.shuffle(nodes)
+    for u in nodes:
         if u not in appended_pairs:
             appended_pairs[u] = {}
 
@@ -29,6 +32,8 @@ def get_unconnected_pairs_(G: nx.Graph, k_length=2):
 
                 appended_pairs[u][v] = True
                 appended_pairs[v][u] = True
+            if n_limit is not None and len(unconnected_pairs) >= n_limit:
+                break
 
     return unconnected_pairs
 
@@ -136,15 +141,6 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_p
     print("Pre-processing graph for link prediction...")
     start_time = time()
 
-    # Get possible edge can form in the future
-    print("\tGet possible unconnected link...", end=" ")
-    temp_time = time()
-
-    all_unconnected_pairs = get_unconnected_pairs_(G, k_length=k_length)
-    graph_df = pd.DataFrame(data=all_unconnected_pairs, columns=['node_1', 'node_2'])
-    graph_df['link'] = 0  # add target variable 'link'
-    print(f"{round(time() - temp_time)}s")
-
     # Drop some edges which not make graph isolate
     print("\tDrop some current links...", end=" ")
     temp_time = time()
@@ -176,12 +172,23 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_p
     removed_edge_graph_df['link'] = 1  # add the target variable 'link'
     print(f"{round(time() - temp_time)}s")
 
-    print("Random drop some unconnected link")
-    print("Before drop length graph_df = ", len(graph_df))
-    remove_n = len(graph_df) - len(removed_edge_graph_df) * 9
-    drop_indices = np.random.choice(graph_df.index, remove_n, replace=False)
-    graph_df = graph_df.drop(drop_indices)
-    print("After drop length graph_df = ", len(graph_df))
+    # print("Random drop some unconnected link")
+    # print("Before drop length graph_df = ", len(graph_df))
+    # remove_n = max(len(graph_df) - len(removed_edge_graph_df) * 9, 0)
+    # drop_indices = np.random.choice(graph_df.index, remove_n, replace=False)
+    # graph_df = graph_df.drop(drop_indices)
+    # print("After drop length graph_df = ", len(graph_df))
+
+    # Get possible edge can form in the future
+    print("\tGet possible unconnected link...", end=" ")
+    temp_time = time()
+    expect_unconnected_links_len = len(removed_edge_graph_df) * 9
+    all_unconnected_pairs = get_unconnected_pairs_(G, k_length=k_length, n_limit=expect_unconnected_links_len)
+    graph_df = pd.DataFrame(data=all_unconnected_pairs, columns=['node_1', 'node_2'])
+    graph_df['link'] = 0  # add target variable 'link'
+    print(f"{round(time() - temp_time)}s")
+
+    print("Rate: ", len(removed_edge_graph_df)/len(graph_df))
 
     print("\tCreate data frame have potential links and removed link.")
     graph_df = graph_df.append(removed_edge_graph_df[['node_1', 'node_2', 'link']], ignore_index=True)

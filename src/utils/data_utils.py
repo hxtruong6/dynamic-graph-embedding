@@ -18,6 +18,18 @@ def load_processed_data(folder):
     return graphs_df, graphs
 
 
+def load_single_processed_data(folder):
+    files = [f for f in listdir(folder) if isfile(join(folder, f))]
+    graph_df = None
+    graph = None
+    for f in sorted(files):
+        if ".json" in f:
+            graph_df = pd.read_json(join(folder, f))
+        else:  # ".edgelist" in f is True
+            graph = get_graph_from_file(join(folder, f))
+    return graph_df, graph
+
+
 def save_processed_data(graph_df: pd.DataFrame, graph: nx.Graph, folder, index):
     if not exists(folder):
         makedirs(folder)

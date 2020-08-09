@@ -34,16 +34,16 @@ if __name__ == "__main__":
     if not exists(processed_data_folder):
         raise ValueError("Lack of processed data and trained model")
     # ==================== Data =========================
-    graphs, idx2node = read_dynamic_graph(
-        folder_path=folder_data,
-        limit=None,
-        convert_to_idx=True
-    )
-    # g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
-    # g2 = nx.gnm_random_graph(n=15, m=30, seed=6)
-    # g3 = nx.gnm_random_graph(n=30, m=100, seed=6)
-    #
-    # graphs = [g1, g2, g3]
+    # graphs, idx2node = read_dynamic_graph(
+    #     folder_path=folder_data,
+    #     limit=None,
+    #     convert_to_idx=True
+    # )
+    g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
+    g2 = nx.gnm_random_graph(n=15, m=30, seed=6)
+    g3 = nx.gnm_random_graph(n=30, m=100, seed=6)
+
+    graphs = [g1, g2, g3]
 
     # =============================================
 
@@ -64,13 +64,7 @@ if __name__ == "__main__":
         print(f"Isolate nodes: {nx.number_of_isolates(g)}")
 
     # ----------- Training area -----------
-    dy_embeddings = []
-    for g in G_partial_list:
-        node2vec = Node2Vec(g, dimensions=128, walk_length=100, num_walks=2000,
-                            workers=4)  # Use temp_folder for big graphs
-        model = node2vec.fit(window=10, min_count=1, batch_words=4)
-        embedding = [model[str(u)] for u in sorted(g.nodes)]
-        dy_embeddings.append(embedding)
+
 
     # -------- Stability constant -------------
     print(f"Stability constant= {stability_constant(graphs=G_partial_list, embeddings=dy_embeddings)}")
