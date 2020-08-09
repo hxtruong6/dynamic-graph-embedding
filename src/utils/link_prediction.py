@@ -40,8 +40,11 @@ def run_link_pred_evaluate(graph_df, embeddings, alg=None, num_boost_round=10000
         x = [(embeddings[i] + embeddings[j]) for i, j in zip(graph_df['node_1'], graph_df['node_2'])]
 
     # TODO: check unbalance dataset
+    # TODO: cannot split with big data
+    data_ = np.array(x)
+    print("train_test_split")
     X_train, X_test, y_train, y_test = train_test_split(
-        np.array(x),
+        data_,
         graph_df['link'],
         test_size=0.25,
         random_state=35,

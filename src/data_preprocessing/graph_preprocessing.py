@@ -3,8 +3,6 @@ from os.path import isfile, join
 from time import time
 import networkx as nx
 import numpy as np
-# from tensorflow import SparseTensor
-
 
 def get_graph_from_file(filename):
     if filename is None:

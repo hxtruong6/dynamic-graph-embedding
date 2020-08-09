@@ -20,11 +20,8 @@ warnings.filterwarnings("ignore")
 if __name__ == "__main__":
     def check_current_loss_model():
         for model_idx in range(len(G_partial_list)):
-            dy_ge.train_at(model_index=model_idx,
-                           prop_size=prop_size, epochs=1, skip_print=skip_print,
-                           net2net_applied=net2net_applied, learning_rate=1e-6,
-                           batch_size=batch_size, folder_path=weight_model_folder,
-                           ck_config=checkpoint_config, early_stop=early_stop,
+            dy_ge.train_at(model_index=model_idx, folder_path=weight_model_folder,
+                           epochs=1, learning_rate=1e-7,
                            is_load_from_previous_model=False)
 
 
@@ -32,36 +29,17 @@ if __name__ == "__main__":
     is_run_stability_constant = False
     is_run_evaluate_link_prediction = False
     # ------------ Params -----------
-    folder_data = "../data/cit_hepth"
-    processed_data_folder = "../processed_data/cit_hepth"
-    weight_model_folder = "../models/cit_hepth"
+    folder_data = "./data/cit_hepth"
+    processed_data_folder = "./processed_data/cit_hepth"
+    weight_model_folder = "./models/cit_hepth"
+    embeddings_folder = "./embeddings/cit_hepth"
 
-    epochs = 200
-    skip_print = 20
-    batch_size = 512  # 512
-    early_stop = 100  # 100
     seed = 6
-    prop_size = 0.35
-
-    # empty if not need to train with list lr else priority
-    learning_rate_list = [
-        0.0005, 1e-4, 1e-4,
-        # 5e-5, 3e-5, 1e-5,
-        # 5e-6, 1e-6
-    ]
-    # learning_rate_list = [0.01]  # empty if not need to train with list lr else priority
-
-    # Default=None index here if you want to train just one model. If not it will run all dataset
-    specific_model_index = None  # must be order: 0,1,2,..
-
     alpha = 0.2
     beta = 10
     l1 = 0.001
     l2 = 0.0005
     embedding_dim = 128
-    net2net_applied = False
-    checkpoint_config = CheckpointConfig(number_saved=50, folder_path=weight_model_folder + "_ck")
-
     # link prediction params
     show_acc_on_edge = True
     top_k = 10
@@ -77,12 +55,6 @@ if __name__ == "__main__":
         limit=None,
         convert_to_idx=True
     )
-    # g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
-    # g2 = nx.gnm_random_graph(n=15, m=30, seed=6)
-    # g3 = nx.gnm_random_graph(n=30, m=100, seed=6)
-    #
-    # graphs = [g1, g2, g3]
-
     # =============================================
 
     print("Number graphs: ", len(graphs))
@@ -107,22 +79,26 @@ if __name__ == "__main__":
     )
 
     print("\n-----------\nStart load model...")
-    start_time = time()
     dy_ge.load_models(folder_path=weight_model_folder)
-    print(f"Loaded model: {round(time() - start_time, 2)}s\n--------------\n")
 
     # Uncomment to know current loss value
     print("Check current loss value of model: ")
     check_current_loss_model()
 
+    # print("Saving embedding... ")
+    # dy_ge.save_embeddings(folder_path=embeddings_folder)
+    print("Loading embedding...", end=" ")
+    start_time = time()
+    dy_embeddings = dy_ge.load_embeddings(folder_path=embeddings_folder)
+    # dy_embeddings = dy_ge.get_all_embeddings()
+    print(f"{round(time() - start_time, 2)}s")
+
     # -------- Stability constant -------------
     if is_run_stability_constant:
-        dy_embeddings = dy_ge.get_all_embeddings()
         print(f"Stability constant= {stability_constant(graphs=G_partial_list, embeddings=dy_embeddings)}")
 
     # ----- run evaluate link prediction -------
     if is_run_evaluate_link_prediction:
-        dy_embeddings = dy_ge.get_all_embeddings()
         for i in range(len(graphs)):
             G_df = G_dfs[i]
             print(f"\n-->[Graph {i}] Run link predict evaluation ---")

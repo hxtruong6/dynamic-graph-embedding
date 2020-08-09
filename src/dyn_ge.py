@@ -16,7 +16,7 @@ from src.utils.visualize import plot_embedding
 
 
 class TDynGE(object):
-    def __init__(self, graphs, embedding_dim, l1=0.001, l2=0.001, alpha=0.01, beta=2):
+    def __init__(self, graphs, embedding_dim, l1=0.001, l2=0.0005, alpha=0.2, beta=10):
         super(TDynGE, self).__init__()
         if not graphs:
             raise ValueError("Must be provide graphs data")
@@ -29,7 +29,6 @@ class TDynGE(object):
         self.alpha = alpha
         self.beta = beta
         self.static_ges = []
-        self.model_folder_paths = []
 
     def get_all_embeddings(self):
         return [ge.get_embedding() for ge in self.static_ges]
@@ -187,7 +186,7 @@ class TDynGE(object):
             ge: TStaticGE
             ge.save_embedding(filepath=join(folder_path, f"_{idx}"))
 
-    def load_embedding(self, folder_path):
+    def load_embeddings(self, folder_path):
         if not exists(folder_path):
             raise ValueError("Folder is invalid.")
 

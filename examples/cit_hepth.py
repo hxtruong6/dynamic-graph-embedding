@@ -199,9 +199,7 @@ if __name__ == "__main__":
     )
     if is_just_load_model:
         print("\n-----------\nStart load model...")
-        start_time = time()
         dy_ge.load_models(folder_path=weight_model_folder)
-        print(f"Loaded model: {round(time() - start_time, 2)}s\n--------------\n")
     elif specific_model_index is not None:
         train_model_at_index()
     else:

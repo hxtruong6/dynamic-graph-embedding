@@ -20,6 +20,7 @@ warnings.filterwarnings("ignore")
 
 if __name__ == "__main__":
     # ------------ Params -----------
+    folder_data = "./data/cit_hepth"
     processed_data_folder = "../processed_data/cit_hepth"
 
     seed = 6
