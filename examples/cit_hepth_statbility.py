@@ -87,6 +87,8 @@ def dyn_gem_alg():
         graphs=graphs, embedding_dim=embedding_dim,
         alpha=alpha, beta=beta, l1=l1, l2=l2
     )
+    check_current_loss_model(dy_ge)
+
     if is_just_load_model:
         print("\n-----------\nStart load model...")
         dy_ge.load_models(folder_path=weight_model_folder)
@@ -112,8 +114,8 @@ def dyn_gem_alg():
 def node2vec_alg():
     dy_embeddings = []
     for g in graphs:
-        node2vec = Node2Vec(g, dimensions=embedding_dim, walk_length=10, num_walks=200,
-                            workers=4)  # Use temp_folder for big graphs
+        node2vec = Node2Vec(g, dimensions=embedding_dim, walk_length=50, num_walks=50,
+                            workers=2)  # Use temp_folder for big graphs
         model = node2vec.fit(window=10, min_count=1, batch_words=4)
         embedding = [model[str(u)] for u in sorted(g.nodes)]
         dy_embeddings.append(np.array(embedding))
