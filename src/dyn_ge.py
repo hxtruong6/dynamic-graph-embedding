@@ -22,7 +22,7 @@ class TDynGE(object):
             raise ValueError("Must be provide graphs data")
 
         self.graphs = graphs
-        self.graph_len = len(graphs)
+        self.size = len(graphs)
         self.embedding_dim = embedding_dim
         self.l1 = l1
         self.l2 = l2
@@ -92,8 +92,8 @@ class TDynGE(object):
         ge = TStaticGE(G=g, model=autoencoder, alpha=self.alpha, beta=self.beta)
         return ge
 
-    def train(self, folder_path, prop_size=0.4, batch_size=64, epochs=100, skip_print=5,
-              net2net_applied=False, learning_rate=0.001, ck_config: CheckpointConfig = None,
+    def train(self, folder_path, prop_size=0.3, batch_size=64, epochs=100, skip_print=5,
+              net2net_applied=False, learning_rate=1e-6, ck_config: CheckpointConfig = None,
               early_stop=50, plot_loss=False):
         # Create folder for saving model if not existed
         if not exists(folder_path):

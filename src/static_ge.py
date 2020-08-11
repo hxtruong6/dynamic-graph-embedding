@@ -82,7 +82,7 @@ class TStaticGE(object):
         loss = loss_2 + self.alpha * loss_1
         return loss
 
-    def train(self, batch_size=1, epochs=1, learning_rate=1e-3, skip_print=5, ck_config: CheckpointConfig = None,
+    def train(self, batch_size=1, epochs=1, learning_rate=1e-6, skip_print=1, ck_config: CheckpointConfig = None,
               early_stop=None, threshold_loss=1e-4, plot_loss=False):
         # TODO: set seed through parameter
         torch.manual_seed(6)
