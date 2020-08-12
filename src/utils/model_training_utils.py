@@ -49,7 +49,7 @@ def train_model(dy_ge: TDynGE, params: SettingParam):
                            ck_config=CheckpointConfig(number_saved=params.ck_length_saving,
                                                       folder_path=params.ck_folder),
                            early_stop=params.early_stop,
-                           is_load_from_previous_model=is_load_from_previous_model)
+                           is_load_from_previous_model=is_load_from_previous_model, shuffle=params.dyge_shuffle)
 
     print(f"\nFinish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
 
@@ -74,7 +74,7 @@ def train_model_at_index(dy_ge: TDynGE, params: SettingParam):
                        ck_config=CheckpointConfig(number_saved=params.ck_length_saving,
                                                   folder_path=params.ck_folder),
                        early_stop=params.early_stop,
-                       is_load_from_previous_model=is_load_from_previous_model)
+                       is_load_from_previous_model=is_load_from_previous_model, shuffle=params.dyge_shuffle)
 
     print(f"\nFinish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
 

@@ -40,12 +40,12 @@ class TDynGE(object):
 
     def _train_model(self, dy_ge_idx, filepath, batch_size, epochs,
                      skip_print, learning_rate, early_stop,
-                     plot_loss=False, ck_config: CheckpointConfig = None):
+                     plot_loss=False, ck_config: CheckpointConfig = None, shuffle=False):
         ge: TStaticGE = self.static_ges[dy_ge_idx]
 
         start_time = time()
         ge.train(batch_size=batch_size, epochs=epochs, skip_print=skip_print, learning_rate=learning_rate,
-                 ck_config=ck_config, early_stop=early_stop, plot_loss=plot_loss)
+                 ck_config=ck_config, early_stop=early_stop, plot_loss=plot_loss, shuffle=shuffle)
         training_time = time() - start_time
 
         save_custom_model(model=ge.get_model(), filepath=filepath)
@@ -94,7 +94,22 @@ class TDynGE(object):
 
     def train(self, folder_path, prop_size=0.3, batch_size=64, epochs=100, skip_print=5,
               net2net_applied=False, learning_rate=1e-6, ck_config: CheckpointConfig = None,
-              early_stop=50, plot_loss=False):
+              early_stop=50, plot_loss=False, shuffle=False):
+        '''
+
+        :param folder_path:
+        :param prop_size:
+        :param batch_size:
+        :param epochs:
+        :param skip_print:
+        :param net2net_applied:
+        :param learning_rate:
+        :param ck_config:
+        :param early_stop:
+        :param plot_loss:
+        :param shuffle:
+        :return:
+        '''
         # Create folder for saving model if not existed
         if not exists(folder_path):
             os.makedirs(folder_path)
@@ -111,14 +126,15 @@ class TDynGE(object):
             training_time = self._train_model(dy_ge_idx=i, filepath=join(folder_path, f"graph_{i}"),
                                               batch_size=batch_size, epochs=epochs, learning_rate=learning_rate,
                                               skip_print=skip_print, early_stop=early_stop, plot_loss=plot_loss,
-                                              ck_config=ck_config)
+                                              ck_config=ck_config, shuffle=shuffle)
             print(f"Training time in {training_time}s")
 
     def train_at(self, model_index, folder_path, prop_size=0.4, batch_size=64, epochs=100, skip_print=5,
                  net2net_applied=False, learning_rate=0.001, ck_config: CheckpointConfig = None,
-                 early_stop=50, plot_loss=False, is_load_from_previous_model=False):
+                 early_stop=50, plot_loss=False, is_load_from_previous_model=False, shuffle=False):
         '''
         To training a specific model.
+        :param shuffle:
         :param model_index:
         :param folder_path:
         :param prop_size:
@@ -156,7 +172,7 @@ class TDynGE(object):
         training_time = self._train_model(dy_ge_idx=model_index, filepath=join(folder_path, f"graph_{model_index}"),
                                           batch_size=batch_size, epochs=epochs, learning_rate=learning_rate,
                                           skip_print=skip_print, early_stop=early_stop, plot_loss=plot_loss,
-                                          ck_config=ck_config)
+                                          ck_config=ck_config, shuffle=shuffle)
         print(f"Time in {training_time}s")
 
     def load_models(self, folder_path):

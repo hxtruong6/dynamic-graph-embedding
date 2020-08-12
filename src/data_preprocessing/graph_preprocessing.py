@@ -3,6 +3,8 @@ from os.path import isfile, join
 from time import time
 import networkx as nx
 import numpy as np
+import torch
+
 
 def get_graph_from_file(filename):
     if filename is None:
@@ -37,6 +39,23 @@ def next_datasets(A, L, batch_size):
 
         yield i, batch_inp
         i += 1
+
+
+def handle_graph_mini_batch(batch_inp):
+    # print(batch_inp)
+    mini_A = []
+    for idx in batch_inp[0]:
+        col = batch_inp[1][:, idx].clone()
+        col = col.detach().numpy()
+        mini_A.append(col)
+    mini_A = np.transpose(np.array(mini_A))
+
+    D = np.diag(np.sum(mini_A, axis=0))
+    L = D - mini_A
+
+    # A = torch.tensor(A)
+    L = torch.tensor(L)
+    return batch_inp[1], L
 
 
 def read_node_label(filename, skip_head=False):

@@ -10,7 +10,7 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
 from src.data_preprocessing.graph_dataset import GraphDataset
-from src.data_preprocessing.graph_preprocessing import next_datasets, get_graph_from_file
+from src.data_preprocessing.graph_preprocessing import next_datasets, get_graph_from_file, handle_graph_mini_batch
 from src.utils.autoencoder import TAutoencoder
 from src.utils.checkpoint_config import CheckpointConfig
 from src.utils.graph_util import draw_graph, print_graph_stats
@@ -86,11 +86,13 @@ class TStaticGE(object):
         return loss
 
     def train(self, batch_size=1, epochs=1, learning_rate=1e-6, skip_print=1, ck_config: CheckpointConfig = None,
-              early_stop=None, threshold_loss=1e-4, plot_loss=False):
+              early_stop=None, threshold_loss=1e-4, plot_loss=False, shuffle=False):
         # TODO: set seed through parameter
         torch.manual_seed(6)
-        graph_dataset = GraphDataset(A=self.A, L=self.L, batch_size=batch_size)
-        dataloader = DataLoader(graph_dataset)
+        # graph_dataset = GraphDataset(A=self.A, L=self.L, batch_size=batch_size)
+        # dataloader = DataLoader(graph_dataset)
+        graph_dataset = GraphDataset(A=self.A, L=self.L)
+        dataloader = DataLoader(graph_dataset, batch_size=batch_size, shuffle=False)
 
         self.model = self.model.to(device)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=self.l2)
@@ -103,11 +105,13 @@ class TStaticGE(object):
             loss = None
             t1 = time()
             for step, batch_inp in enumerate(dataloader):
-                A, L = batch_inp
+                A, L = handle_graph_mini_batch(batch_inp)
 
                 # Trick here. TODO: check why A is (1,batch_size,number_nodes)
-                x = Variable(A[0]).to(device)
-                L = L[0].to(device)
+                # x = Variable(A[0]).to(device)
+                # L = L[0].to(device)
+                x = Variable(A).to(device)
+                L = L.to(device)
                 # ===================forward=====================
                 optimizer.zero_grad()
 
@@ -121,7 +125,7 @@ class TStaticGE(object):
             if (epoch + 1) % skip_print == 0 or epoch == epochs - 1 or epoch == 0:
                 print('Epoch [{}/{}] \t\tloss:{:.4f} \t\ttime:{:.2f}s'.format(epoch + 1, epochs, loss, time() - t1))
 
-            if ck_config is not None:
+            if ck_config is not None and ck_config.NumberSaved == epoch:
                 save_custom_model(model=self.model, filepath=join(ck_config.FolderPath, f"graph_{ck_config.Index}"))
 
             if loss < min_loss - threshold_loss:
@@ -181,25 +185,26 @@ class TStaticGE(object):
 
 if __name__ == "__main__":
     # G = get_graph_from_file(filename="../data/email-eu/email-Eu-core.txt")
-    G = nx.gnm_random_graph(n=50, m=120, seed=6)
+    G = nx.gnm_random_graph(n=100, m=1000, seed=6)
     print_graph_stats(G)
     # draw_graph(G, limit_node=50)
     # pos = nx.spring_layout(G, seed=6)
     # print(G.edges)
 
-    embedding_dim = 5
+    embedding_dim = 2
 
     g_hidden_df, hidden_G = preprocessing_graph_for_link_prediction(
         G=G,
-        drop_node_percent=0.2
+        drop_node_percent=0.2,
+        edge_rate=0.08
     )
 
-    ge = TStaticGE(G=hidden_G, embedding_dim=embedding_dim, hidden_dims=[20, 10], l2=1e-5, alpha=0.2, beta=10,
+    ge = TStaticGE(G=hidden_G, embedding_dim=embedding_dim, hidden_dims=[6, 4], l2=1e-5, alpha=0.2, beta=10,
                    activation='relu')
     start_time = time()
-    ge.train(batch_size=128, epochs=200, skip_print=500,
-             learning_rate=0.0005, early_stop=200, threshold_loss=1e-4,
-             plot_loss=True
+    ge.train(batch_size=4, epochs=2000, skip_print=500,
+             learning_rate=0.0003, early_stop=200, threshold_loss=1e-4,
+             plot_loss=True, shuffle=True
              )
 
     # ge.train(batch_size=128, epochs=10000, skip_print=500, learning_rate=0.001, early_stop=200, threshold_loss=1e-4)

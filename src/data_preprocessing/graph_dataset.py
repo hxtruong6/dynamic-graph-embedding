@@ -23,28 +23,33 @@ class GraphDataset(Dataset):
         :param L:
         :param batch_size:
         '''
-        self.dts = []
-        dataset_size = A.shape[0]
-        steps_per_epoch = (dataset_size - 1) // batch_size + 1
-        for i in range(steps_per_epoch):
-            index = np.arange(
-                i * batch_size, min((i + 1) * batch_size, dataset_size))
-            A_train = A[index, :].todense()
-            L_train = L[index][:, index].todense()
-
-            A_train = torch.tensor(A_train)
-            L_train = torch.tensor(L_train)
-            batch_inp = [A_train, L_train]
-            self.dts.append(batch_inp)
+        # self.dts = []
+        # dataset_size = A.shape[0]
+        # steps_per_epoch = (dataset_size - 1) // batch_size + 1
+        # for i in range(steps_per_epoch):
+        #     index = np.arange(
+        #         i * batch_size, min((i + 1) * batch_size, dataset_size))
+        #     A_train = A[index, :].todense()
+        #     L_train = L[index][:, index].todense()
+        #
+        #     A_train = torch.tensor(A_train)
+        #     L_train = torch.tensor(L_train)
+        #     batch_inp = [A_train, L_train]
+        #     self.dts.append(batch_inp)
+        self.A = A
+        self.L = L
+        self.size = A.get_shape()[0]
 
     def __len__(self):
-        return len(self.dts)
+        # return len(self.dts)
+        return self.size
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
-
-        return self.dts[idx]
+        sample = [idx, self.A.getrow(idx).toarray()[0]]
+        # return self.dts[idx]
+        return sample
 
 
 if __name__ == "__main__":

@@ -53,6 +53,7 @@ if __name__ == "__main__":
         'net2net_applied': False,
         'ck_length_saving': 50,
         'ck_folder': './saved_data/models/cit_hepth_link_pred_ck',
+        'dyge_shuffle': True,
 
         # 'link_pred_config': {
         'show_acc_on_edge': True,
