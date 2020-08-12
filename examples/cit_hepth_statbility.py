@@ -3,6 +3,7 @@ import warnings
 import networkx as nx
 import numpy as np
 
+from src.data_preprocessing.graph_preprocessing import read_dynamic_graph
 from src.utils.model_training_utils import create_folder, dyngem_alg, node2vec_alg
 from src.utils.graph_util import print_graph_stats
 from src.utils.setting_param import SettingParam
@@ -68,15 +69,15 @@ if __name__ == "__main__":
     create_folder(params.node2vec_emb_folder)
     # ==================== Data =========================
 
-    # graphs, idx2node = read_dynamic_graph(
-    #     folder_path=params.dataset_folder,
-    #     limit=None,
-    #     convert_to_idx=True
-    # )
-    g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
-    g2 = nx.gnm_random_graph(n=15, m=30, seed=6)
-    g3 = nx.gnm_random_graph(n=30, m=100, seed=6)
-    graphs = [g1, g2, g3]
+    graphs, idx2node = read_dynamic_graph(
+        folder_path=params.dataset_folder,
+        limit=None,
+        convert_to_idx=True
+    )
+    # g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
+    # g2 = nx.gnm_random_graph(n=15, m=30, seed=6)
+    # g3 = nx.gnm_random_graph(n=30, m=100, seed=6)
+    # graphs = [g1, g2, g3]
 
     print("Number graphs: ", len(graphs))
     print("Origin graphs:")
