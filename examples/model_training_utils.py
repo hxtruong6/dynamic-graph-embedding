@@ -1,6 +1,7 @@
 import os
 import warnings
 from operator import itemgetter
+from os.path import join
 from time import time
 
 import numpy as np
@@ -28,7 +29,7 @@ def train_model(dy_ge: TDynGE, params: SettingParam):
     print("\n-----------\nStart total training...")
 
     print("Creating model saving for each graph...")
-    create_dump_models(dy_ge, weight_model_folder=params.weight_model_folder)
+    create_dump_models(dy_ge, weight_model_folder=params.dyge_weight_folder)
 
     print("\n### ==\tOptimize model training == ###")
 
@@ -44,7 +45,7 @@ def train_model(dy_ge: TDynGE, params: SettingParam):
                            learning_rate=lr,
                            prop_size=params.prop_size, epochs=params.epochs, skip_print=params.skip_print,
                            net2net_applied=params.net2net_applied,
-                           batch_size=params.batch_size, folder_path=params.weight_model_folder,
+                           batch_size=params.batch_size, folder_path=params.dyge_weight_folder,
                            ck_config=CheckpointConfig(number_saved=params.ck_length_saving,
                                                       folder_path=params.ck_folder),
                            early_stop=params.early_stop,
@@ -58,18 +59,18 @@ def train_model_at_index(dy_ge: TDynGE, params: SettingParam):
     TODO: Should support for resuming train which continue train with learning_rate
     :return:
     '''
-    print(f"\n==========\t Model index = {params.specific_model_index} ============")
+    print(f"\n==========\t Model index = {params.specific_dyge_model_index} ============")
     start_time_train = time()
     for i, lr in enumerate(params.learning_rate_list):
         is_load_from_previous_model = False
         if i == 0:
             is_load_from_previous_model = True  # Prevent re-train model
         print("\tLearning rate = ", lr)
-        dy_ge.train_at(model_index=params.specific_model_index,
+        dy_ge.train_at(model_index=params.specific_dyge_model_index,
                        learning_rate=lr,
                        prop_size=params.prop_size, epochs=params.epochs, skip_print=params.skip_print,
                        net2net_applied=params.net2net_applied,
-                       batch_size=params.batch_size, folder_path=params.weight_model_folder,
+                       batch_size=params.batch_size, folder_path=params.dyge_weight_folder,
                        ck_config=CheckpointConfig(number_saved=params.ck_length_saving,
                                                   folder_path=params.ck_folder),
                        early_stop=params.early_stop,
@@ -91,21 +92,22 @@ def dyngem_alg(graphs, params: SettingParam):
         graphs=graphs, embedding_dim=params.embedding_dim,
         alpha=params.alpha, beta=params.beta, l1=params.l1, l2=params.l2
     )
-    if params.is_just_load_model:
+    if params.is_load_dyge_model:
         print("\n-----------\nStart load model...")
-        dy_ge.load_models(folder_path=params.weight_model_folder)
-    elif params.specific_model_index is not None:
-        train_model_at_index(dy_ge)
+        dy_ge.load_models(folder_path=params.dyge_weight_folder)
+    elif params.specific_dyge_model_index is not None:
+        train_model_at_index(dy_ge, params)
     else:
         train_model(dy_ge, params=params)
 
     # Uncomment to know current loss value
-    check_current_loss_model(dy_ge, weight_model_folder=params.weight_model_folder)
+    print("Check current loss model")
+    check_current_loss_model(dy_ge, weight_model_folder=params.dyge_weight_folder)
 
     print("Saving embeddings...")
-    dy_ge.save_embeddings(folder_path=params.embeddings_folder)
+    dy_ge.save_embeddings(folder_path=params.dyge_emb_folder)
 
-    print("Loading embedding...")
+    # print("Loading embedding...")
     # dy_embeddings = dy_ge.load_embeddings(folder_path=embeddings_folder)
     dy_embeddings = dy_ge.get_all_embeddings()
     # print(np.array_equal(dy_embeddings, dyn))
@@ -113,29 +115,36 @@ def dyngem_alg(graphs, params: SettingParam):
     return dy_ge, dy_embeddings
 
 
-def node2vec_alg(graphs, embedding_dim, index=None):
-    dy_embeddings = []
-    if index is not None and index < len(graphs):
-        node2vec = Node2Vec(graph=graphs[index],
-                            dimensions=embedding_dim,
-                            walk_length=80,
-                            num_walks=20,
-                            workers=2)  # Use temp_folder for big graphs
-        node2vec_model = node2vec.fit()
-        embedding = [node2vec_model[str(u)] for u in sorted(graphs[index].nodes)]
-        return node2vec_model, np.array(embedding)
+def _node2vec_alg(graph, embedding_dim, filename=None, is_load_emb=False):
+    node2vec = Node2Vec(graph=graph,
+                        dimensions=embedding_dim,
+                        walk_length=80,
+                        num_walks=20,
+                        workers=2)  # Use temp_folder for big graphs
+    node2vec_model = node2vec.fit()
+    if is_load_emb:
+        embedding = node2vec_model.wv.load_word2vec_format(filename)
+    else:
+        embedding = [np.array(node2vec_model[str(u)]) for u in sorted(graph.nodes)]
+        if filename is not None:
+            node2vec_model.wv.save_word2vec_format(filename)
 
-    for g in graphs:
-        node2vec = Node2Vec(graph=g,
-                            dimensions=embedding_dim,
-                            walk_length=80,
-                            num_walks=20,
-                            workers=2)  # Use temp_folder for big graphs
-        node2vec_model = node2vec.fit()
-        embedding = [node2vec_model[str(u)] for u in sorted(g.nodes)]
-        dy_embeddings.append(np.array(embedding))
+    return np.array(embedding)
+
+
+def node2vec_alg(graphs, embedding_dim, index=None, folder_path=None, is_load_emb=False):
+    dy_embeddings = []
+    # TODO: set is_load_emb
+    is_load_emb = False
+    if index is not None and index < len(graphs):
+        return _node2vec_alg(graphs[index], embedding_dim=embedding_dim, filename=join(folder_path, "n2v_emb"),
+                             is_load_emb=is_load_emb)
+    for idx, g in enumerate(graphs):
+        embedding = _node2vec_alg(graph=g, embedding_dim=embedding_dim,
+                                  filename=join(folder_path, f"n2v_emb{idx}"), is_load_emb=is_load_emb)
+        dy_embeddings.append(embedding)
     dy_embeddings = np.array(dy_embeddings)
-    return node2vec_model, dy_embeddings
+    return dy_embeddings
 
 
 def link_pred_eva(g_hidden_df, hidden_dy_embedding):

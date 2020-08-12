@@ -9,8 +9,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-def get_unconnected_pairs_(G: nx.Graph, k_length=2, n_limit=None):
-    edges_len = dict(nx.all_pairs_shortest_path_length(G, cutoff=k_length))
+def get_unconnected_pairs_(G: nx.Graph, cutoff=2, n_limit=None):
+    edges_len = dict(nx.all_pairs_shortest_path_length(G, cutoff=cutoff))
 
     unconnected_pairs = []
     appended_pairs = {}
@@ -136,7 +136,7 @@ def run_predict(data, embedding, model):
 
 
 # https://www.analyticsvidhya.com/blog/2020/01/link-prediction-how-to-predict-your-future-connections-on-facebook/
-def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_percent=1, seed=6):
+def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_percent=1, seed=6, edge_rate=None):
     np.random.seed(seed)
     print("Pre-processing graph for link prediction...")
     start_time = time()
@@ -182,13 +182,17 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_p
     # Get possible edge can form in the future
     print("\tGet possible unconnected link...", end=" ")
     temp_time = time()
-    expect_unconnected_links_len = len(removed_edge_graph_df) * 9
-    all_unconnected_pairs = get_unconnected_pairs_(G, k_length=k_length, n_limit=expect_unconnected_links_len)
+    if edge_rate is not None:
+        expect_unconnected_links_len = len(removed_edge_graph_df) * (1 - edge_rate) / edge_rate
+        all_unconnected_pairs = get_unconnected_pairs_(G, cutoff=k_length, n_limit=expect_unconnected_links_len)
+    else:
+        all_unconnected_pairs = get_unconnected_pairs_(G, cutoff=k_length)
+
     graph_df = pd.DataFrame(data=all_unconnected_pairs, columns=['node_1', 'node_2'])
     graph_df['link'] = 0  # add target variable 'link'
     print(f"{round(time() - temp_time)}s")
 
-    print("Rate: ", len(removed_edge_graph_df)/len(graph_df))
+    print("Rate: ", len(removed_edge_graph_df) / len(graph_df))
 
     print("\tCreate data frame have potential links and removed link.")
     graph_df = graph_df.append(removed_edge_graph_df[['node_1', 'node_2', 'link']], ignore_index=True)

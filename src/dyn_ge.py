@@ -152,12 +152,12 @@ class TDynGE(object):
         if ck_config is not None:
             ck_config = deepcopy(ck_config).set_index(index=model_index)
 
-        print(f"\t--- Training graph {model_index} ---")
+        print(f"\t--- Graph {model_index} ---")
         training_time = self._train_model(dy_ge_idx=model_index, filepath=join(folder_path, f"graph_{model_index}"),
                                           batch_size=batch_size, epochs=epochs, learning_rate=learning_rate,
                                           skip_print=skip_print, early_stop=early_stop, plot_loss=plot_loss,
                                           ck_config=ck_config)
-        print(f"Training time in {training_time}s")
+        print(f"Time in {training_time}s")
 
     def load_models(self, folder_path):
         print("Loading models...", end=" ")

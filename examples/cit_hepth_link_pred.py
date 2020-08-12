@@ -1,4 +1,5 @@
 import warnings
+from os.path import join
 from time import time
 
 import networkx as nx
@@ -21,21 +22,23 @@ if __name__ == "__main__":
 
         # 'folder_paths': {
         'dataset_folder': "./data/cit_hepth",
-        'processed_data_folder': "./processed_data/cit_hepth_link_pred",
-        'weight_model_folder': "./models/cit_hepth_link_pred",
-        'embeddings_folder': "./embeddings/cit_hepth_link_pred",
+        'processed_link_pred_data_folder': "./saved_data/processed_data/cit_hepth_link_pred",
+        'dyge_weight_folder': "./saved_data/models/cit_hepth_link_pred",
+        'dyge_emb_folder': "./saved_data/embeddings/cit_hepth_link_pred",
+        'node2vec_emb_folder': "./saved_data/node2vec_emb/cit_hepth_link_pred",
         'global_seed': 6,
 
         # 'training_config': {
-        'is_load_processed_data': False,
-        'is_just_load_model': False,
-        'specific_model_index': None,
+        'is_load_link_pred_data': False,
+        'is_load_dyge_model': True,
+        'specific_dyge_model_index': None,
+        'is_load_n2v_model': False,
 
         # 'dyge_config': {
         'prop_size': 0.3,
         'embedding_dim': 100,
-        'epochs': 20,
-        'skip_print': 2,
+        'epochs': 2,
+        'skip_print': 200,
         'batch_size': 512,  # 512
         'early_stop': 100,  # 100
         'learning_rate_list': [
@@ -50,7 +53,7 @@ if __name__ == "__main__":
         'l2': 0.0005,
         'net2net_applied': False,
         'ck_length_saving': 50,
-        'ck_folder': './models/cit_hepth_link_pred_ck',
+        'ck_folder': './saved_data/models/cit_hepth_link_pred_ck',
 
         # 'link_pred_config': {
         'show_acc_on_edge': True,
@@ -63,9 +66,10 @@ if __name__ == "__main__":
     # ====================== Settings =================
     np.random.seed(seed=params.global_seed)
 
-    create_folder(params.processed_data_folder)
-    create_folder(params.weight_model_folder)
-    create_folder(params.embeddings_folder)
+    create_folder(params.processed_link_pred_data_folder)
+    create_folder(params.dyge_weight_folder)
+    create_folder(params.dyge_emb_folder)
+    create_folder(params.node2vec_emb_folder)
     # ==================== Data =========================
 
     # graphs, idx2node = read_dynamic_graph(
@@ -86,19 +90,20 @@ if __name__ == "__main__":
         # draw_graph(g, limit_node=25)
     # =================== Processing data for link prediction ==========================
 
-    if params.is_load_processed_data:
+    if params.is_load_link_pred_data:
         print("Load processed data from disk...")
-        g_hidden_df, g_hidden_partial = load_single_processed_data(folder=params.processed_data_folder)
+        g_hidden_df, g_hidden_partial = load_single_processed_data(folder=params.processed_link_pred_data_folder)
     else:
         print("\n[ALL] Pre-processing graph for link prediction...")
         start_time = time()
         print(f"==== Graph {len(graphs)}: ")
         g_hidden_df, g_hidden_partial = preprocessing_graph_for_link_prediction(
-            G=graphs[-1], k_length=2,
-            drop_node_percent=params.drop_node_percent
+            G=graphs[-1],
+            drop_node_percent=params.drop_node_percent,
+            edge_rate=0.1
         )
         # NOTE: save idx graph. Not original graph
-        save_processed_data(g_hidden_df, g_hidden_partial, folder=params.processed_data_folder, index=len(graphs))
+        save_processed_data(g_hidden_df, g_hidden_partial, folder=params.processed_link_pred_data_folder, index=len(graphs))
         # draw_graph(g=g_partial, limit_node=25)
         print(f"[ALL] Processed in {round(time() - start_time, 2)}s\n")
 
@@ -122,9 +127,10 @@ if __name__ == "__main__":
     if params.is_node2vec:
         print("=============== Node2vec ============")
         # Just need train last graph
-        _, hidden_embedding = node2vec_alg(
+        hidden_embedding = node2vec_alg(
             graphs=graphs,
             embedding_dim=params.embedding_dim,
-            index=len(graphs) - 1
+            index=len(graphs) - 1,
+            folder_path=params.node2vec_emb_folder
         )
         link_pred_eva(g_hidden_df=g_hidden_df, hidden_dy_embedding=hidden_embedding)

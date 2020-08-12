@@ -22,15 +22,17 @@ if __name__ == "__main__":
 
         # 'folder_paths': {
         'dataset_folder': "./data/cit_hepth",
-        'processed_data_folder': "./processed_data/cit_hepth_stability",
-        'weight_model_folder': "./models/cit_hepth_stability",
-        'embeddings_folder': "./embeddings/cit_hepth_stability",
+        'processed_link_pred_data_folder': "./saved_data/processed_link_pred_data/cit_hepth_stability",
+        'dyge_weight_folder': "./saved_data/models/cit_hepth_stability",
+        'dyge_emb_folder': "./saved_data/dyge_emb/cit_hepth_stability",
+        'node2vec_emb_folder': "./saved_data/node2vec_emb/cit_hepth_stability",
         'global_seed': 6,
 
         # 'training_config': {
-        'is_load_processed_data': False,
-        'is_just_load_model': False,
-        'specific_model_index': None,
+        'is_load_link_pred_data': False,
+        'is_load_dyge_model': False,
+        'specific_dyge_model_index': None,
+        'is_load_n2v_model': False,
 
         # 'dyge_config': {
         'prop_size': 0.3,
@@ -51,7 +53,7 @@ if __name__ == "__main__":
         'l2': 0.0005,
         'net2net_applied': False,
         'ck_length_saving': 50,
-        'ck_folder': './models/cit_hepth_stability_ck',
+        'ck_folder': './saved_data/models/cit_hepth_stability_ck',
 
         # 'link_pred_config': {
         'show_acc_on_edge': True,
@@ -64,9 +66,10 @@ if __name__ == "__main__":
     # ====================== Settings =================
     np.random.seed(seed=params.global_seed)
 
-    create_folder(params.processed_data_folder)
-    create_folder(params.weight_model_folder)
-    create_folder(params.embeddings_folder)
+    # create_folder(params.processed_link_pred_data_folder)
+    create_folder(params.dyge_weight_folder)
+    create_folder(params.dyge_emb_folder)
+    create_folder(params.node2vec_emb_folder)
     # ==================== Data =========================
 
     # graphs, idx2node = read_dynamic_graph(
@@ -97,8 +100,10 @@ if __name__ == "__main__":
     if params.is_node2vec:
         print("=============== Node2vec ============")
         # Just need train last graph
-        _, dy_embeddings = node2vec_alg(
+        dy_embeddings = node2vec_alg(
             graphs=graphs,
             embedding_dim=params.embedding_dim,
+            folder_path=params.node2vec_emb_folder,
+            is_load_emb=params.is_load_n2v_model
         )
         print(f"Stability constant= {stability_constant(graphs=graphs, embeddings=dy_embeddings)}")

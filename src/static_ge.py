@@ -5,6 +5,7 @@ import networkx as nx
 import numpy as np
 import scipy.sparse as sparse
 import torch
+from node2vec import Node2Vec
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
@@ -13,6 +14,8 @@ from src.data_preprocessing.graph_preprocessing import next_datasets, get_graph_
 from src.utils.autoencoder import TAutoencoder
 from src.utils.checkpoint_config import CheckpointConfig
 from src.utils.graph_util import draw_graph, print_graph_stats
+from src.utils.link_pred_precision_k import check_link_prediction
+from src.utils.link_prediction import preprocessing_graph_for_link_prediction, run_link_pred_evaluate
 from src.utils.model_utils import save_custom_model
 from src.utils.visualize import plot_reconstruct_graph, plot_embeddings_with_labels, plot_losses
 
@@ -177,31 +180,42 @@ class TStaticGE(object):
 
 
 if __name__ == "__main__":
-    G = get_graph_from_file(filename="../data/email-eu/email-Eu-core.txt")
-    # G = nx.gnm_random_graph(n=15, m=30, seed=6)
+    # G = get_graph_from_file(filename="../data/email-eu/email-Eu-core.txt")
+    G = nx.gnm_random_graph(n=50, m=120, seed=6)
     print_graph_stats(G)
     # draw_graph(G, limit_node=50)
     # pos = nx.spring_layout(G, seed=6)
     # print(G.edges)
 
-    ge = TStaticGE(
+    embedding_dim = 5
+
+    g_hidden_df, hidden_G = preprocessing_graph_for_link_prediction(
         G=G,
-        embedding_dim=16,
-        hidden_dims=[512, 128, 64],
-        l2=1e-5, alpha=0.01, beta=6
+        drop_node_percent=0.2
     )
-    # ge = TStaticGE(G=G, embedding_dim=4, hidden_dims=[8], l2=1e-5, alpha=0.01, beta=6,
-    #                activation='sigmoid')
+
+    ge = TStaticGE(G=hidden_G, embedding_dim=embedding_dim, hidden_dims=[20, 10], l2=1e-5, alpha=0.2, beta=10,
+                   activation='relu')
     start_time = time()
-    ge.train(batch_size=128, epochs=100, skip_print=10,
-             learning_rate=0.001, early_stop=200, threshold_loss=1e-4,
+    ge.train(batch_size=128, epochs=200, skip_print=500,
+             learning_rate=0.0005, early_stop=200, threshold_loss=1e-4,
              plot_loss=True
              )
 
     # ge.train(batch_size=128, epochs=10000, skip_print=500, learning_rate=0.001, early_stop=200, threshold_loss=1e-4)
     print(f"Finished in {round(time() - start_time, 2)}s")
-    embeddings = ge.get_embedding()
+    embedding = ge.get_embedding()
     reconstructed_graph = ge.get_reconstruction()
+
+    print(embedding[:3])
+    link_pred_prec = check_link_prediction(embedding, train_graph=hidden_G, origin_graph=G, check_index=[2, 10, 20])
+    print("Precision@K: ", link_pred_prec)
+
+    run_link_pred_evaluate(
+        graph_df=g_hidden_df,
+        embeddings=embedding,
+        num_boost_round=20000
+    )
     # print(reconstructed_graph)
     # classify_embeddings_evaluate(embeddings, label_file="../data/email-eu/email-Eu-core-department-labels.txt")
     # plot_embeddings_with_labels(G, embeddings=embeddings,
@@ -212,3 +226,22 @@ if __name__ == "__main__":
 
     # plot_embedding(embeddings=embeddings)
     # plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0.6)
+
+    print("========= Node2vec ==========")
+    node2vec = Node2Vec(graph=hidden_G,
+                        dimensions=embedding_dim,
+                        walk_length=80,
+                        num_walks=20,
+                        workers=2)  # Use temp_folder for big graphs
+    node2vec_model = node2vec.fit()
+    embedding = [node2vec_model[str(u)] for u in sorted(hidden_G.nodes)]
+    embedding = np.array(embedding)
+    print(embedding[:3])
+
+    link_pred_prec = check_link_prediction(embedding, train_graph=hidden_G, origin_graph=G, check_index=[2, 10, 20])
+    print("Precision@K: ", link_pred_prec)
+    run_link_pred_evaluate(
+        graph_df=g_hidden_df,
+        embeddings=embedding,
+        num_boost_round=20000
+    )

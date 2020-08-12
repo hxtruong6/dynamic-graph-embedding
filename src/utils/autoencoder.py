@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 
 
 class TPartCoder(nn.Module):
-    def __init__(self, input_dim, output_dim=2, hidden_dims=None, activation='sigmoid', is_encoder=True):
+    def __init__(self, input_dim, output_dim=2, hidden_dims=None, activation='relu', is_encoder=True):
         '''
 
         :param input_dim:
@@ -44,6 +44,8 @@ class TPartCoder(nn.Module):
 
         if not self.is_encoder:
             x = self.activation(x)
+        else:
+            x = nn.Tanh()(x)
 
         return x
 
@@ -74,7 +76,7 @@ class TPartCoder(nn.Module):
 
 
 class TAutoencoder(nn.Module):
-    def __init__(self, input_dim=None, embedding_dim=None, hidden_dims=None, l1=0.01, l2=1e-5, activation='sigmoid'):
+    def __init__(self, input_dim=None, embedding_dim=None, hidden_dims=None, l1=0.01, l2=1e-5, activation='relu'):
         super(TAutoencoder, self).__init__()
         if input_dim is None or embedding_dim is None:
             return

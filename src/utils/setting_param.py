@@ -9,14 +9,16 @@ class SettingParam(object):
 
         #  folder_paths
         self.dataset_folder = None
-        self.processed_data_folder = None
-        self.weight_model_folder = None
-        self.embeddings_folder = None
+        self.processed_link_pred_data_folder = None
+        self.dyge_weight_folder = None
+        self.dyge_emb_folder = None
+        self.node2vec_emb_folder = None
 
         #  training_config
-        self.is_load_processed_data = None
-        self.is_just_load_model = None
-        self.specific_model_index = None
+        self.is_load_link_pred_data = None
+        self.is_load_dyge_model = None
+        self.is_load_n2v_model = None
+        self.specific_dyge_model_index = None
 
         #  dyge_config
         self.prop_size = None
@@ -31,7 +33,7 @@ class SettingParam(object):
         self.l1 = None
         self.l2 = None
         self.net2net_applied = None
-        self.ck_length_saving = None # Check point
+        self.ck_length_saving = None  # Check point
         self.ck_folder = None
 
         #  link_pred_config
