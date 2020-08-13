@@ -15,7 +15,7 @@ if __name__ == "__main__":
     params = {
         # 'algorithm': {
         'is_dyge': True,
-        'is_node2vec': True,
+        'is_node2vec': False,
 
         # 'folder_paths': {
         'dataset_folder': "./data/cit_hepth",
@@ -26,9 +26,10 @@ if __name__ == "__main__":
         'global_seed': 6,
 
         # 'training_config': {
-        'is_load_link_pred_data': False,
         'is_load_dyge_model': False,
         'specific_dyge_model_index': None,
+        'dyge_resume_training': False,
+
         'is_load_n2v_model': False,
 
         # 'dyge_config': {
@@ -70,15 +71,15 @@ if __name__ == "__main__":
     create_folder(params.node2vec_emb_folder)
     # ==================== Data =========================
 
-    graphs, idx2node = read_dynamic_graph(
-        folder_path=params.dataset_folder,
-        limit=None,
-        convert_to_idx=True
-    )
-    # g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
-    # g2 = nx.gnm_random_graph(n=15, m=30, seed=6)
-    # g3 = nx.gnm_random_graph(n=30, m=100, seed=6)
-    # graphs = [g1, g2, g3]
+    # graphs, idx2node = read_dynamic_graph(
+    #     folder_path=params.dataset_folder,
+    #     limit=None,
+    #     convert_to_idx=True
+    # )
+    g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
+    g2 = nx.gnm_random_graph(n=15, m=30, seed=6)
+    g3 = nx.gnm_random_graph(n=30, m=100, seed=6)
+    graphs = [g1, g2, g3]
 
     print("Number graphs: ", len(graphs))
     print("Origin graphs:")

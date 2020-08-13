@@ -1,6 +1,5 @@
 import os
 import warnings
-from operator import itemgetter
 from os.path import join
 from time import time
 
@@ -21,7 +20,7 @@ def create_dump_models(dy_ge: TDynGE, weight_model_folder):
     Method to create saved model on disk for later optimizer
     :return:
     '''
-    dy_ge.train(epochs=1, skip_print=1, learning_rate=1e-6,
+    dy_ge.train(epochs=1, skip_print=1, learning_rate=1e-7,
                 folder_path=weight_model_folder)
 
 
@@ -36,45 +35,37 @@ def train_model(dy_ge: TDynGE, params: SettingParam):
     start_time_train = time()
     for model_idx in range(dy_ge.size):
         print(f"\n==========\t Model index = {model_idx} ============")
-        for i, lr in enumerate(params.learning_rate_list):
-            is_load_from_previous_model = False
-            if i == 0:
-                is_load_from_previous_model = True  # Always create from previous model if start training
-            print("\tLearning rate = ", lr)
-            dy_ge.train_at(model_index=model_idx,
-                           learning_rate=lr,
-                           prop_size=params.prop_size, epochs=params.epochs, skip_print=params.skip_print,
-                           net2net_applied=params.net2net_applied,
-                           batch_size=params.batch_size, folder_path=params.dyge_weight_folder,
-                           ck_config=CheckpointConfig(number_saved=params.ck_length_saving,
-                                                      folder_path=params.ck_folder),
-                           early_stop=params.early_stop,
-                           is_load_from_previous_model=is_load_from_previous_model, shuffle=params.dyge_shuffle)
+        train_model_at_index(dy_ge=dy_ge, params=params, model_idx=model_idx)
 
     print(f"\nFinish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
 
 
-def train_model_at_index(dy_ge: TDynGE, params: SettingParam):
+def train_model_at_index(dy_ge: TDynGE, params: SettingParam, model_idx=None):
     '''
     TODO: Should support for resuming train which continue train with learning_rate
     :return:
     '''
     print(f"\n==========\t Model index = {params.specific_dyge_model_index} ============")
     start_time_train = time()
+
+    if model_idx is None:
+        model_idx = params.specific_dyge_model_index
+
     for i, lr in enumerate(params.learning_rate_list):
         is_load_from_previous_model = False
-        if i == 0:
+        if not params.dyge_resume_training and i == 0:
             is_load_from_previous_model = True  # Prevent re-train model
         print("\tLearning rate = ", lr)
-        dy_ge.train_at(model_index=params.specific_dyge_model_index,
-                       learning_rate=lr,
-                       prop_size=params.prop_size, epochs=params.epochs, skip_print=params.skip_print,
-                       net2net_applied=params.net2net_applied,
-                       batch_size=params.batch_size, folder_path=params.dyge_weight_folder,
-                       ck_config=CheckpointConfig(number_saved=params.ck_length_saving,
-                                                  folder_path=params.ck_folder),
-                       early_stop=params.early_stop,
-                       is_load_from_previous_model=is_load_from_previous_model, shuffle=params.dyge_shuffle)
+        training_time = dy_ge.train_at(model_index=model_idx,
+                                       learning_rate=lr,
+                                       prop_size=params.prop_size, epochs=params.epochs, skip_print=params.skip_print,
+                                       net2net_applied=params.net2net_applied,
+                                       batch_size=params.batch_size, folder_path=params.dyge_weight_folder,
+                                       ck_config=CheckpointConfig(number_saved=params.ck_length_saving,
+                                                                  folder_path=params.ck_folder),
+                                       early_stop=params.early_stop,
+                                       is_load_from_previous_model=is_load_from_previous_model)
+        print(f"Train model of graph {model_idx} in {round(time() - training_time, 2)}s\n")
 
     print(f"\nFinish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
 

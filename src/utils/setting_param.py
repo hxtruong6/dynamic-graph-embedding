@@ -36,6 +36,7 @@ class SettingParam(object):
         self.ck_length_saving = None  # Check point
         self.ck_folder = None
         self.dyge_shuffle = None
+        self.dyge_resume_training = None
 
         #  link_pred_config
         self.show_acc_on_edge = None

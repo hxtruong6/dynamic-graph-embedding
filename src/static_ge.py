@@ -202,9 +202,10 @@ if __name__ == "__main__":
     ge = TStaticGE(G=hidden_G, embedding_dim=embedding_dim, hidden_dims=[6, 4], l2=1e-5, alpha=0.2, beta=10,
                    activation='relu')
     start_time = time()
+    ck_point = CheckpointConfig(number_saved=2, folder_path="../data")
     ge.train(batch_size=4, epochs=2000, skip_print=500,
              learning_rate=0.0003, early_stop=200, threshold_loss=1e-4,
-             plot_loss=True, shuffle=True
+             plot_loss=True, shuffle=True, ck_config=ck_point
              )
 
     # ge.train(batch_size=128, epochs=10000, skip_print=500, learning_rate=0.001, early_stop=200, threshold_loss=1e-4)
