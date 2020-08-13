@@ -14,17 +14,18 @@ from src.utils.setting_param import SettingParam
 warnings.filterwarnings("ignore")
 
 if __name__ == "__main__":
+    dataset_name = "soc_wiki"
     params = {
         # 'algorithm': {
         'is_dyge': True,
         'is_node2vec': False,
 
         # 'folder_paths': {
-        'dataset_folder': "./data/cit_hepth",
-        'processed_link_pred_data_folder': "./saved_data/processed_data/cit_hepth_link_pred",
-        'dyge_weight_folder': "./saved_data/models/cit_hepth_link_pred",
-        'dyge_emb_folder': "./saved_data/embeddings/cit_hepth_link_pred",
-        'node2vec_emb_folder': "./saved_data/node2vec_emb/cit_hepth_link_pred",
+        'dataset_folder': f"./data/{dataset_name}",
+        'processed_link_pred_data_folder': f"./saved_data/processed_data/{dataset_name}_link_pred",
+        'dyge_weight_folder': f"./saved_data/models/{dataset_name}_link_pred",
+        'dyge_emb_folder': f"./saved_data/embeddings/{dataset_name}_link_pred",
+        'node2vec_emb_folder': f"./saved_data/node2vec_emb/{dataset_name}_link_pred",
         'global_seed': 6,
 
         # 'training_config': {
@@ -54,7 +55,7 @@ if __name__ == "__main__":
         'l2': 0.0005,
         'net2net_applied': False,
         'ck_length_saving': 50,
-        'ck_folder': './saved_data/models/cit_hepth_link_pred_ck',
+        'ck_folder': f'./saved_data/models/{dataset_name}_link_pred_ck',
         'dyge_shuffle': True,
 
         # 'link_pred_config': {
@@ -105,7 +106,8 @@ if __name__ == "__main__":
             edge_rate=0.1
         )
         # NOTE: save idx graph. Not original graph
-        save_processed_data(g_hidden_df, g_hidden_partial, folder=params.processed_link_pred_data_folder, index=len(graphs))
+        save_processed_data(g_hidden_df, g_hidden_partial, folder=params.processed_link_pred_data_folder,
+                            index=len(graphs))
         # draw_graph(g=g_partial, limit_node=25)
         print(f"[ALL] Processed in {round(time() - start_time, 2)}s\n")
 

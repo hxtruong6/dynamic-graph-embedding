@@ -185,10 +185,10 @@ class TStaticGE(object):
 
 if __name__ == "__main__":
     # G = get_graph_from_file(filename="../data/email-eu/email-Eu-core.txt")
-    G = nx.gnm_random_graph(n=100, m=1000, seed=6)
+    G = nx.gnm_random_graph(n=20, m=40, seed=6)
     print_graph_stats(G)
-    # draw_graph(G, limit_node=50)
-    # pos = nx.spring_layout(G, seed=6)
+    pos = nx.spring_layout(G, seed=6)
+    draw_graph(G, limit_node=50, pos=pos)
     # print(G.edges)
 
     embedding_dim = 2
@@ -199,12 +199,12 @@ if __name__ == "__main__":
         edge_rate=0.08
     )
 
-    ge = TStaticGE(G=hidden_G, embedding_dim=embedding_dim, hidden_dims=[6, 4], l2=1e-5, alpha=0.2, beta=10,
-                   activation='relu')
+    ge = TStaticGE(G=hidden_G, embedding_dim=embedding_dim, hidden_dims=[16, 8], l2=1e-5, alpha=0.2, beta=10,
+                   activation='leaky_relu')
     start_time = time()
     ck_point = CheckpointConfig(number_saved=2, folder_path="../data")
-    ge.train(batch_size=4, epochs=2000, skip_print=500,
-             learning_rate=0.0003, early_stop=200, threshold_loss=1e-4,
+    ge.train(batch_size=64, epochs=10000, skip_print=500,
+             learning_rate=0.0005, early_stop=200, threshold_loss=1e-4,
              plot_loss=True, shuffle=True, ck_config=ck_point
              )
 
@@ -214,6 +214,8 @@ if __name__ == "__main__":
     reconstructed_graph = ge.get_reconstruction()
 
     print(embedding[:3])
+    print(nx.adjacency_matrix(G).todense()[:3])
+    print(reconstructed_graph[:3])
     link_pred_prec = check_link_prediction(embedding, train_graph=hidden_G, origin_graph=G, check_index=[2, 10, 20])
     print("Precision@K: ", link_pred_prec)
 
@@ -231,23 +233,23 @@ if __name__ == "__main__":
     # save_custom_model(ge.get_model(), filepath="../models/email-eu/email-eu")
 
     # plot_embedding(embeddings=embeddings)
-    # plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0.6)
+    plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0.6)
 
-    print("========= Node2vec ==========")
-    node2vec = Node2Vec(graph=hidden_G,
-                        dimensions=embedding_dim,
-                        walk_length=80,
-                        num_walks=20,
-                        workers=2)  # Use temp_folder for big graphs
-    node2vec_model = node2vec.fit()
-    embedding = [node2vec_model[str(u)] for u in sorted(hidden_G.nodes)]
-    embedding = np.array(embedding)
-    print(embedding[:3])
-
-    link_pred_prec = check_link_prediction(embedding, train_graph=hidden_G, origin_graph=G, check_index=[2, 10, 20])
-    print("Precision@K: ", link_pred_prec)
-    run_link_pred_evaluate(
-        graph_df=g_hidden_df,
-        embeddings=embedding,
-        num_boost_round=20000
-    )
+    # print("========= Node2vec ==========")
+    # node2vec = Node2Vec(graph=hidden_G,
+    #                     dimensions=embedding_dim,
+    #                     walk_length=80,
+    #                     num_walks=20,
+    #                     workers=2)  # Use temp_folder for big graphs
+    # node2vec_model = node2vec.fit()
+    # embedding = [node2vec_model[str(u)] for u in sorted(hidden_G.nodes)]
+    # embedding = np.array(embedding)
+    # print(embedding[:3])
+    #
+    # link_pred_prec = check_link_prediction(embedding, train_graph=hidden_G, origin_graph=G, check_index=[2, 10, 20])
+    # print("Precision@K: ", link_pred_prec)
+    # run_link_pred_evaluate(
+    #     graph_df=g_hidden_df,
+    #     embeddings=embedding,
+    #     num_boost_round=20000
+    # )

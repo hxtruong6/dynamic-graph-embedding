@@ -65,7 +65,7 @@ def train_model_at_index(dy_ge: TDynGE, params: SettingParam, model_idx=None):
                                                                   folder_path=params.ck_folder),
                                        early_stop=params.early_stop,
                                        is_load_from_previous_model=is_load_from_previous_model)
-        print(f"Train model of graph {model_idx} in {round(time() - training_time, 2)}s\n")
+        print(f"Train model of graph {model_idx} in {training_time}s\n")
 
     print(f"\nFinish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
 
