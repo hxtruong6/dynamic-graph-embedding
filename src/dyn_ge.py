@@ -99,20 +99,30 @@ class TDynGE(object):
         if not exists(folder_path):
             os.makedirs(folder_path)
 
+        training_time_sum = 0
         for i in range(len(self.graphs)):
-            ge = self._create_static_ge(index=i, folder_path=folder_path, prop_size=prop_size,
-                                        net2net_applied=net2net_applied)
-            self.static_ges.append(ge)
-
-            if ck_config is not None:
-                ck_config = deepcopy(ck_config).set_index(index=i)
-
-            print(f"\t--- Training graph {i} ---")
-            training_time = self._train_model(dy_ge_idx=i, filepath=join(folder_path, f"graph_{i}"),
-                                              batch_size=batch_size, epochs=epochs, learning_rate=learning_rate,
-                                              skip_print=skip_print, early_stop=early_stop, plot_loss=plot_loss,
-                                              ck_config=ck_config)
-            print(f"Training time in {training_time}s")
+            # ge = self._create_static_ge(index=i, folder_path=folder_path, prop_size=prop_size,
+            #                             net2net_applied=net2net_applied)
+            # self.static_ges.append(ge)
+            #
+            # updated_ck_config = deepcopy(ck_config)
+            # if updated_ck_config is not None:
+            #     updated_ck_config.set_index(index=i)
+            #
+            # print(f"\t--- Training graph {i} ---")
+            # training_time = self._train_model(dy_ge_idx=i, filepath=join(folder_path, f"graph_{i}"),
+            #                                   batch_size=batch_size, epochs=epochs, learning_rate=learning_rate,
+            #                                   skip_print=skip_print, early_stop=early_stop, plot_loss=plot_loss,
+            #                                   ck_config=updated_ck_config)
+            training_time = self.train_at(model_index=i, folder_path=folder_path, prop_size=prop_size,
+                                          batch_size=batch_size, epochs=epochs, skip_print=skip_print,
+                                          net2net_applied=net2net_applied, learning_rate=learning_rate,
+                                          ck_config=ck_config, early_stop=early_stop, plot_loss=plot_loss,
+                                          is_load_from_previous_model=True
+                                          )
+            training_time_sum += training_time
+            # print(f"Training time in {training_time}s")
+        return training_time
 
     def train_at(self, model_index, folder_path, prop_size=0.4, batch_size=64, epochs=100, skip_print=5,
                  net2net_applied=False, learning_rate=0.001, ck_config: CheckpointConfig = None,
@@ -149,15 +159,17 @@ class TDynGE(object):
                                                                   net2net_applied=net2net_applied)
 
         # Else for resume training
-        if ck_config is not None:
-            ck_config = deepcopy(ck_config).set_index(index=model_index)
+        updated_ck_config = deepcopy(ck_config)
+        if updated_ck_config is not None:
+            updated_ck_config.set_index(index=model_index)
 
         print(f"\t--- Graph {model_index} ---")
         training_time = self._train_model(dy_ge_idx=model_index, filepath=join(folder_path, f"graph_{model_index}"),
                                           batch_size=batch_size, epochs=epochs, learning_rate=learning_rate,
                                           skip_print=skip_print, early_stop=early_stop, plot_loss=plot_loss,
-                                          ck_config=ck_config)
-        print(f"Time in {training_time}s")
+                                          ck_config=updated_ck_config)
+        # print(f"Time in {training_time}s")
+        return training_time
 
     def load_models(self, folder_path):
         print("Loading models...", end=" ")

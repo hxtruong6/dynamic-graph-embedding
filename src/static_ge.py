@@ -194,12 +194,14 @@ if __name__ == "__main__":
         drop_node_percent=0.2
     )
 
+    ck_point = CheckpointConfig(number_saved=2, folder_path="../data")
+
     ge = TStaticGE(G=hidden_G, embedding_dim=embedding_dim, hidden_dims=[20, 10], l2=1e-5, alpha=0.2, beta=10,
                    activation='relu')
     start_time = time()
-    ge.train(batch_size=128, epochs=200, skip_print=500,
+    ge.train(batch_size=128, epochs=20, skip_print=5,
              learning_rate=0.0005, early_stop=200, threshold_loss=1e-4,
-             plot_loss=True
+             plot_loss=True, ck_config=ck_point
              )
 
     # ge.train(batch_size=128, epochs=10000, skip_print=500, learning_rate=0.001, early_stop=200, threshold_loss=1e-4)

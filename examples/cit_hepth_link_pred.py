@@ -17,7 +17,7 @@ if __name__ == "__main__":
     params = {
         # 'algorithm': {
         'is_dyge': True,
-        'is_node2vec': True,
+        'is_node2vec': False,
 
         # 'folder_paths': {
         'dataset_folder': "./data/cit_hepth",
@@ -31,6 +31,8 @@ if __name__ == "__main__":
         'is_load_link_pred_data': False,
         'is_load_dyge_model': True,
         'specific_dyge_model_index': None,
+        'dyge_resume_training': False,
+
         'is_load_n2v_model': False,
 
         # 'dyge_config': {
