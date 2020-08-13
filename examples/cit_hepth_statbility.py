@@ -26,7 +26,6 @@ if __name__ == "__main__":
         'global_seed': 6,
 
         # 'training_config': {
-        'is_load_link_pred_data': False,
         'is_load_dyge_model': False,
         'specific_dyge_model_index': 2,
         'dyge_resume_training': True,
