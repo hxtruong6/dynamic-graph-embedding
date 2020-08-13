@@ -101,32 +101,19 @@ class TDynGE(object):
 
         training_time_sum = 0
         for i in range(len(self.graphs)):
-            # ge = self._create_static_ge(index=i, folder_path=folder_path, prop_size=prop_size,
-            #                             net2net_applied=net2net_applied)
-            # self.static_ges.append(ge)
-            #
-            # updated_ck_config = deepcopy(ck_config)
-            # if updated_ck_config is not None:
-            #     updated_ck_config.set_index(index=i)
-            #
-            # print(f"\t--- Training graph {i} ---")
-            # training_time = self._train_model(dy_ge_idx=i, filepath=join(folder_path, f"graph_{i}"),
-            #                                   batch_size=batch_size, epochs=epochs, learning_rate=learning_rate,
-            #                                   skip_print=skip_print, early_stop=early_stop, plot_loss=plot_loss,
-            #                                   ck_config=updated_ck_config)
             training_time = self.train_at(model_index=i, folder_path=folder_path, prop_size=prop_size,
                                           batch_size=batch_size, epochs=epochs, skip_print=skip_print,
                                           net2net_applied=net2net_applied, learning_rate=learning_rate,
                                           ck_config=ck_config, early_stop=early_stop, plot_loss=plot_loss,
-                                          is_load_from_previous_model=True
+                                          is_load_from_previous_model=True, call_in_class=True
                                           )
             training_time_sum += training_time
             # print(f"Training time in {training_time}s")
-        return training_time
+        return training_time_sum
 
     def train_at(self, model_index, folder_path, prop_size=0.4, batch_size=64, epochs=100, skip_print=5,
                  net2net_applied=False, learning_rate=0.001, ck_config: CheckpointConfig = None,
-                 early_stop=50, plot_loss=False, is_load_from_previous_model=False):
+                 early_stop=50, plot_loss=False, is_load_from_previous_model=False, call_in_class=False):
         '''
         To training a specific model.
         :param model_index:
@@ -147,16 +134,22 @@ class TDynGE(object):
         if not exists(folder_path):
             raise ValueError(f"{folder_path} is invalid path.")
 
-        if len(self.static_ges) == 0:
-            self.load_models(folder_path=folder_path)
+        if not call_in_class:
+            if len(self.static_ges) == 0:
+                self.load_models(folder_path=folder_path)
 
-        if model_index >= len(self.static_ges):
-            raise ValueError(f"{model_index} is out of range")
+            if model_index >= len(self.static_ges):
+                raise ValueError(f"{model_index} is out of range")
 
         if is_load_from_previous_model:  # for begin training -> create new model to train
-            self.static_ges[model_index] = self._create_static_ge(index=model_index, folder_path=folder_path,
-                                                                  prop_size=prop_size,
-                                                                  net2net_applied=net2net_applied)
+            ge = self._create_static_ge(index=model_index, folder_path=folder_path,
+                                        prop_size=prop_size,
+                                        net2net_applied=net2net_applied)
+
+            if call_in_class and len(self.static_ges) == model_index:
+                self.static_ges.append(ge)
+            else:
+                self.static_ges[model_index] = ge
 
         # Else for resume training
         updated_ck_config = deepcopy(ck_config)
