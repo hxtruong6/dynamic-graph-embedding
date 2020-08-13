@@ -151,10 +151,10 @@ class TStaticGE(object):
         if x is None:
             x = self.A.todense()
         # Convert to tensor for pytorch
-        x = torch.tensor(x).cpu()
+        x = torch.tensor(x).to(device)
 
         with torch.no_grad():
-            embedding = self.model.cpu().get_embedding(x=x)
+            embedding = self.model.to(device).get_embedding(x=x)
         torch.cuda.empty_cache()
         self.embedding = embedding
         return embedding
@@ -162,9 +162,9 @@ class TStaticGE(object):
     def get_reconstruction(self, x=None):
         if x is None:
             x = self.A.todense()
-        x = torch.tensor(x).cpu()
+        x = torch.tensor(x).to(device)
         with torch.no_grad():
-            reconstruction = self.model.cpu().get_reconstruction(x=x)
+            reconstruction = self.model.to(device).get_reconstruction(x=x)
         torch.cuda.empty_cache()
         return reconstruction
 
