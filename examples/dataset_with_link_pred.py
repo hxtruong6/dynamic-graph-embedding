@@ -26,7 +26,11 @@ if __name__ == "__main__":
         'processed_link_pred_data_folder': f"./saved_data/processed_data/{dataset_name}_link_pred",
         'dyge_weight_folder': f"./saved_data/models/{dataset_name}_link_pred",
         'dyge_emb_folder': f"./saved_data/embeddings/{dataset_name}_link_pred",
+
         'node2vec_emb_folder': f"./saved_data/node2vec_emb/{dataset_name}_link_pred",
+
+        'sdne_weight_folder': f"./saved_data/sdne_models/{dataset_name}_link_pred",
+
         'global_seed': 6,
 
         # 'training_config': {
@@ -78,6 +82,7 @@ if __name__ == "__main__":
     create_folder(params.dyge_weight_folder)
     create_folder(params.dyge_emb_folder)
     create_folder(params.node2vec_emb_folder)
+
     # ==================== Data =========================
 
     graphs, idx2node = read_dynamic_graph(

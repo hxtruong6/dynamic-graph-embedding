@@ -13,7 +13,11 @@ class SettingParam(object):
         self.processed_link_pred_data_folder = None
         self.dyge_weight_folder = None
         self.dyge_emb_folder = None
+
         self.node2vec_emb_folder = None
+
+        self.sdne_weight_folder = None
+
 
         #  training_config
         self.is_load_link_pred_data = None

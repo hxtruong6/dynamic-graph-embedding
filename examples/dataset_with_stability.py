@@ -15,16 +15,20 @@ if __name__ == "__main__":
     dataset_name = "cit_hepth"
     params = {
         # 'algorithm': {
-        'is_dyge': True,
+        'is_dyge': False,
         'is_node2vec': False,
-        'is_sdne': False,
+        'is_sdne': True,
 
         # 'folder_paths': {
         'dataset_folder': f"./data/{dataset_name}",
         'processed_link_pred_data_folder': f"./saved_data/processed_data/{dataset_name}_stability",
         'dyge_weight_folder': f"./saved_data/models/{dataset_name}_stability",
         'dyge_emb_folder': f"./saved_data/embeddings/{dataset_name}_stability",
+
         'node2vec_emb_folder': f"./saved_data/node2vec_emb/{dataset_name}_stability",
+
+        'sdne_weight_folder': f"./saved_data/sdne_models/{dataset_name}_stability",
+
         'global_seed': 6,
 
         # 'training_config': {
@@ -75,6 +79,7 @@ if __name__ == "__main__":
     create_folder(params.dyge_weight_folder)
     create_folder(params.dyge_emb_folder)
     create_folder(params.node2vec_emb_folder)
+
     # ==================== Data =========================
 
     graphs, idx2node = read_dynamic_graph(

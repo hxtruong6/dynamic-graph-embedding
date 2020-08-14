@@ -155,10 +155,11 @@ def sdne_alg(graphs, params: SettingParam, index=None):
         )
         ge = TStaticGE(G=g, embedding_dim=params.embedding_dim, hidden_dims=hidden_dims, l2=1e-5, alpha=params.alpha,
                        beta=params.beta)
-        # ck_point = CheckpointConfig(number_saved=50, folder_path="../data")
+        ck_point = CheckpointConfig(number_saved=params.ck_length_saving, folder_path=params.sdne_weight_folder + "_ck",
+                                    index=i)
         ge.train(batch_size=params.batch_size, epochs=params.epochs, skip_print=params.skip_print,
                  learning_rate=params.sdne_learning_rate, early_stop=params.early_stop,
-                 plot_loss=True, shuffle=params.sdne_shuffle, ck_config=None
+                 plot_loss=True, shuffle=params.sdne_shuffle, ck_config=ck_point
                  )
         dy_embeddings.append(ge.get_embedding())
     return dy_embeddings
