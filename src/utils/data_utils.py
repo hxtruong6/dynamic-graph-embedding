@@ -26,12 +26,14 @@ def load_single_processed_data(folder):
         if ".json" in f:
             graph_df = pd.read_json(join(folder, f))
         else:  # ".edgelist" in f is True
-            graph = get_graph_from_file(join(folder, f))
+            # graph = get_graph_from_file(join(folder, f))
+            graph = nx.read_gpickle(join(folder, f))
     return graph_df, graph
 
 
 def save_processed_data(graph_df: pd.DataFrame, graph: nx.Graph, folder, index):
     if not exists(folder):
         makedirs(folder)
-    nx.write_edgelist(graph, f'{folder}/graph{index}.edgelist', data=False)
+    # nx.write_edgelist(graph, f'{folder}/graph{index}.edgelist', data=False)
+    nx.write_gpickle(graph, f'{folder}/graph_{index}.gpickle')
     graph_df.to_json(join(folder, f"graph_{index}.json"))

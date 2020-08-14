@@ -22,7 +22,7 @@ if __name__ == "__main__":
         'is_sdne': True,
 
         # 'folder_paths': {
-        'dataset_folder': f"./data/{dataset_name}",
+        'dataset_folder': f"../data/{dataset_name}",
         'processed_link_pred_data_folder': f"./saved_data/processed_data/{dataset_name}_link_pred",
         'dyge_weight_folder': f"./saved_data/models/{dataset_name}_link_pred",
         'dyge_emb_folder': f"./saved_data/embeddings/{dataset_name}_link_pred",
@@ -34,7 +34,7 @@ if __name__ == "__main__":
         'global_seed': 6,
 
         # 'training_config': {
-        'is_load_link_pred_data': False,
+        'is_load_link_pred_data': True,
         'is_load_dyge_model': False,
         'specific_dyge_model_index': None,
         'dyge_resume_training': False,
@@ -87,11 +87,11 @@ if __name__ == "__main__":
 
     # ==================== Data =========================
 
-    # graphs, idx2node = read_dynamic_graph(
-    #     folder_path=params.dataset_folder,
-    #     limit=None,
-    #     convert_to_idx=True
-    # )
+    graphs, idx2node = read_dynamic_graph(
+        folder_path=params.dataset_folder,
+        limit=None,
+        convert_to_idx=True
+    )
     # g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
     # g2 = nx.gnm_random_graph(n=15, m=30, seed=6)
     # g3 = nx.gnm_random_graph(n=30, m=100, seed=6)
@@ -119,7 +119,7 @@ if __name__ == "__main__":
         )
         # NOTE: save idx graph. Not original graph
         save_processed_data(g_hidden_df, g_hidden_partial, folder=params.processed_link_pred_data_folder,
-                            index=len(graphs))
+                            index=len(graphs) - 1)
         # draw_graph(g=g_partial, limit_node=25)
         print(f"[ALL] Processed in {round(time() - start_time, 2)}s\n")
 

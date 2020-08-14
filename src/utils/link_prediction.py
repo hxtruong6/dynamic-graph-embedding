@@ -185,8 +185,8 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_p
     # print("After drop length graph_df = ", len(graph_df))
 
     # Get possible edge can form in the future
-    print("\tGet possible unconnected link...", end=" ")
     temp_time = time()
+    print("\tGet possible unconnected link...", end=" ")
     if edge_rate is not None:
         expect_unconnected_links_len = len(removed_edge_graph_df) * (1 - edge_rate) / edge_rate
         all_unconnected_pairs = get_unconnected_pairs_(G, cutoff=k_length, n_limit=expect_unconnected_links_len)

@@ -1,5 +1,5 @@
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, exists
 from time import time
 import networkx as nx
 import numpy as np
@@ -121,7 +121,7 @@ def convert_graphs_to_idx(graphs):
 
 
 def read_dynamic_graph(folder_path=None, limit=None, convert_to_idx=True):
-    if folder_path is None:
+    if folder_path is None or not exists(folder_path):
         raise ValueError("folder_path must be provided.")
 
     graphs = []
