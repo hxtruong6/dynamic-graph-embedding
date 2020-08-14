@@ -122,7 +122,9 @@ class TStaticGE(object):
                 # ===================backward====================
                 loss.backward()
                 optimizer.step()
-            # ===================log========================
+
+                del x, L
+                # ===================log========================
             train_losses.append(round(float(loss), 4))
             if (epoch + 1) % skip_print == 0 or epoch == epochs - 1 or epoch == 0:
                 print('Epoch [{}/{}] \t\tloss:{:.4f} \t\ttime:{:.2f}s'.format(epoch + 1, epochs, loss, time() - t1))
@@ -140,7 +142,8 @@ class TStaticGE(object):
                 print('Early stopping!\t Epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, epochs, loss))
                 break
 
-        torch.cuda.empty_cache()
+            torch.cuda.empty_cache()
+
         if plot_loss:
             plot_losses(losses=train_losses, x_label="epoch", y_label="loss")
 

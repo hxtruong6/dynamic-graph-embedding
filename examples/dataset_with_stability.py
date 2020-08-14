@@ -15,9 +15,9 @@ if __name__ == "__main__":
     dataset_name = "cit_hepth"
     params = {
         # 'algorithm': {
-        'is_dyge': False,
+        'is_dyge': True,
         'is_node2vec': False,
-        'is_sdne': True,
+        'is_sdne': False,
 
         # 'folder_paths': {
         'dataset_folder': f"./data/{dataset_name}",
@@ -43,9 +43,9 @@ if __name__ == "__main__":
         'early_stop': 200,  # 100
         'learning_rate_list': [
             0.0005,
-            3e-4, 1e-4,
-            5e-5, 3e-5, 1e-5,
-            5e-6, 1e-6
+            # 3e-4, 1e-4,
+            # 5e-5, 3e-5, 1e-5,
+            # 5e-6, 1e-6
         ],
         'alpha': 0.2,
         'beta': 10,
