@@ -49,10 +49,13 @@ if __name__ == "__main__":
         'batch_size': None,  # 512
         'early_stop': 200,  # 100
         'learning_rate_list': [
-            0.0005,
-            3e-4, 1e-4,
-            5e-5, 3e-5, 1e-5,
-            5e-6, 1e-6
+            1e-3,
+            5e-4,
+            1e-4,
+            5e-5,
+            1e-5,
+            5e-6,
+            1e-6
         ],
         'alpha': 0.2,
         'beta': 10,
