@@ -42,22 +42,15 @@ def next_datasets(A, L, batch_size):
 
 
 def handle_graph_mini_batch(batch_inp):
-    # print(batch_inp)
-    mini_A = None
-    # if len(batch_inp[0]) == 1:
-    #     mini_A = batch_inp[1].clone()
     if len(batch_inp[0]) == len(batch_inp[1][0]):
         mini_A = batch_inp[1].clone()
     else:
         mini_A = batch_inp[1][:, batch_inp[0]].clone()
 
-    # D = np.diag(np.sum(mini_A, axis=0))
-    # L = D - mini_A
     D = torch.diag(torch.sum(mini_A, dim=0))
     L = D - mini_A
 
-    # A = torch.tensor(A)
-    # L = torch.tensor(L)
+    del mini_A, D
     return batch_inp[1], L
 
 

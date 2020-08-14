@@ -131,3 +131,5 @@ models/*
 processed_data/*
 #!processed_data/synthetic/
 *.zip
+
+examples/saved_data/*
