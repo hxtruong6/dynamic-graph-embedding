@@ -9,7 +9,7 @@ import networkx as nx
 
 from src.static_ge import TStaticGE
 from src.utils.checkpoint_config import CheckpointConfig
-from src.utils.model_utils import get_hidden_layer
+from src.utils.model_utils import get_hidden_layer, load_custom_model, save_custom_model
 from src.utils.setting_param import SettingParam
 
 warnings.filterwarnings("ignore")
@@ -145,19 +145,8 @@ def node2vec_alg(graphs, embedding_dim, index=None, folder_path=None, is_load_em
 
 
 def sdne_alg(graphs, params: SettingParam, index=None):
-    dy_embeddings = []
-    for i, g in enumerate(graphs):
-        if index is not None and index != i:
-            continue
-
-        g: nx.Graph
-        hidden_dims = get_hidden_layer(
-            prop_size=params.prop_size,
-            input_dim=g.number_of_nodes(),
-            embedding_dim=params.embedding_dim
-        )
-        ge = TStaticGE(G=g, embedding_dim=params.embedding_dim, hidden_dims=hidden_dims, l2=1e-5, alpha=params.alpha,
-                       beta=params.beta)
+    def _sdne_train():
+        print(f"[{i}] SDNE train model...")
         ck_point = CheckpointConfig(number_saved=params.ck_length_saving, folder_path=params.sdne_weight_folder + "_ck",
                                     index=i)
         ge.train(
@@ -165,6 +154,34 @@ def sdne_alg(graphs, params: SettingParam, index=None):
             learning_rate=params.sdne_learning_rate, early_stop=params.early_stop,
             plot_loss=True, shuffle=params.sdne_shuffle, ck_config=ck_point
         )
+
+    dy_embeddings = []
+
+    for i, g in enumerate(graphs):
+        if index is not None and index != i:
+            continue
+
+        g: nx.Graph
+        sdne_model_path = join(params.sdne_weight_folder, f"graph_{i}")
+        if params.sdne_load_model:
+            print(f"[{i}] SDNE load model...")
+            model = load_custom_model(filepath=sdne_model_path)
+            ge = TStaticGE(G=g, model=model, alpha=params.alpha, beta=params.beta)
+
+            if params.sdne_resume_training:
+                _sdne_train()
+        else:
+            hidden_dims = get_hidden_layer(
+                prop_size=params.prop_size,
+                input_dim=g.number_of_nodes(),
+                embedding_dim=params.embedding_dim
+            )
+            ge = TStaticGE(G=g, embedding_dim=params.embedding_dim, hidden_dims=hidden_dims, l2=1e-5,
+                           alpha=params.alpha,
+                           beta=params.beta)
+            _sdne_train()
+        save_custom_model(model=ge.get_model(), filepath=sdne_model_path)
+
         dy_embeddings.append(ge.get_embedding())
     return dy_embeddings
 

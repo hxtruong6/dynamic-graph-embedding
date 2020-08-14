@@ -18,7 +18,6 @@ class SettingParam(object):
 
         self.sdne_weight_folder = None
 
-
         #  training_config
         self.is_load_link_pred_data = None
         self.is_load_dyge_model = None
@@ -46,6 +45,8 @@ class SettingParam(object):
         # sdne_config
         self.sdne_learning_rate = None
         self.sdne_shuffle = None
+        self.sdne_load_model = None
+        self.sdne_resume_training = None
 
         #  link_pred_config
         self.show_acc_on_edge = None

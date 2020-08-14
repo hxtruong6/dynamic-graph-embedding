@@ -66,6 +66,8 @@ if __name__ == "__main__":
         # SDNE
         'sdne_learning_rate': 5e-5,
         'sdne_shuffle': True,
+        'sdne_load_model': False,
+        'sdne_resume_training': False,
 
         # 'link_pred_config': {
         'show_acc_on_edge': True,
@@ -85,11 +87,11 @@ if __name__ == "__main__":
 
     # ==================== Data =========================
 
-    graphs, idx2node = read_dynamic_graph(
-        folder_path=params.dataset_folder,
-        limit=None,
-        convert_to_idx=True
-    )
+    # graphs, idx2node = read_dynamic_graph(
+    #     folder_path=params.dataset_folder,
+    #     limit=None,
+    #     convert_to_idx=True
+    # )
     # g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
     # g2 = nx.gnm_random_graph(n=15, m=30, seed=6)
     # g3 = nx.gnm_random_graph(n=30, m=100, seed=6)

@@ -63,6 +63,8 @@ if __name__ == "__main__":
         # SDNE
         'sdne_learning_rate': 5e-5,
         'sdne_shuffle': True,
+        'sdne_load_model': False,
+        'sdne_resume_training': False,
 
         # 'link_pred_config': {
         'show_acc_on_edge': True,
