@@ -91,7 +91,8 @@ def load_custom_model(filepath):
         embedding_dim=config_layer['embedding_dim'],
         hidden_dims=config_layer['hidden_dims'],
         l1=config_layer['l1'],
-        l2=config_layer['l2']
+        l2=config_layer['l2'],
+        activation=config_layer['activation']
     )
 
     model_path = filepath + ".pt"

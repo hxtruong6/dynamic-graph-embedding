@@ -17,7 +17,7 @@ if __name__ == "__main__":
     dataset_name = "soc_wiki"
     params = {
         # 'algorithm': {
-        'is_dyge': False,
+        'is_dyge': True,
         'is_node2vec': False,
         'is_sdne': True,
 
@@ -34,7 +34,7 @@ if __name__ == "__main__":
         'global_seed': 6,
 
         # 'training_config': {
-        'is_load_link_pred_data': True,
+        'is_load_link_pred_data': False,
         'is_load_dyge_model': False,
         'specific_dyge_model_index': None,
         'dyge_resume_training': False,
@@ -50,12 +50,12 @@ if __name__ == "__main__":
         'early_stop': 200,  # 100
         'learning_rate_list': [
             1e-3,
-            5e-4,
-            1e-4,
-            5e-5,
-            1e-5,
-            5e-6,
-            1e-6
+            # 5e-4,
+            # 1e-4,
+            # 5e-5,
+            # 1e-5,
+            # 5e-6,
+            # 1e-6
         ],
         'alpha': 0.2,
         'beta': 10,
@@ -65,12 +65,14 @@ if __name__ == "__main__":
         'ck_length_saving': 50,
         'ck_folder': f'./saved_data/models/{dataset_name}_link_pred_ck',
         'dyge_shuffle': True,
+        'dyge_activation': 'relu',
 
         # SDNE
-        'sdne_learning_rate': 5e-5,
+        'sdne_learning_rate': 5e-6,
         'sdne_shuffle': True,
         'sdne_load_model': False,
-        'sdne_resume_training': False,
+        'sdne_resume_training': True,
+        'sdne_activation': 'leaky_relu',
 
         # 'link_pred_config': {
         'show_acc_on_edge': True,
@@ -90,15 +92,15 @@ if __name__ == "__main__":
 
     # ==================== Data =========================
 
-    graphs, idx2node = read_dynamic_graph(
-        folder_path=params.dataset_folder,
-        limit=None,
-        convert_to_idx=True
-    )
-    # g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
-    # g2 = nx.gnm_random_graph(n=15, m=30, seed=6)
-    # g3 = nx.gnm_random_graph(n=30, m=100, seed=6)
-    # graphs = [g1, g2, g3]
+    # graphs, idx2node = read_dynamic_graph(
+    #     folder_path=params.dataset_folder,
+    #     limit=None,
+    #     convert_to_idx=True
+    # )
+    g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
+    g2 = nx.gnm_random_graph(n=15, m=30, seed=6)
+    g3 = nx.gnm_random_graph(n=30, m=100, seed=6)
+    graphs = [g1, g2, g3]
 
     print("Number graphs: ", len(graphs))
     print("Origin graphs:")
