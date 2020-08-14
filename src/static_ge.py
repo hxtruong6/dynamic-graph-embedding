@@ -85,13 +85,15 @@ class TStaticGE(object):
         loss = loss_2 + self.alpha * loss_1
         return loss
 
-    def train(self, batch_size=1, epochs=1, learning_rate=1e-6, skip_print=1, ck_config: CheckpointConfig = None,
+    def train(self, batch_size=None, epochs=1, learning_rate=1e-6, skip_print=1, ck_config: CheckpointConfig = None,
               early_stop=None, threshold_loss=1e-4, plot_loss=False, shuffle=False):
         # TODO: set seed through parameter
         torch.manual_seed(6)
         # graph_dataset = GraphDataset(A=self.A, L=self.L, batch_size=batch_size)
         # dataloader = DataLoader(graph_dataset)
         graph_dataset = GraphDataset(A=self.A, L=self.L)
+        if batch_size is None:
+            batch_size = self.input_dim
         dataloader = DataLoader(graph_dataset, batch_size=batch_size, shuffle=False)
 
         self.model = self.model.to(device)

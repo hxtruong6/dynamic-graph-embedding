@@ -39,15 +39,15 @@ if __name__ == "__main__":
         # 'dyge_config': {
         'prop_size': 0.3,
         'embedding_dim': 100,
-        'epochs': 2,
-        'skip_print': 200,
-        'batch_size': 512,  # 512
-        'early_stop': 100,  # 100
+        'epochs': 200,
+        'skip_print': 20,
+        'batch_size': None,  # 512
+        'early_stop': 200,  # 100
         'learning_rate_list': [
             0.0005,
-            # 3e-4, 1e-4,
-            # 5e-5, 3e-5, 1e-5,
-            # 5e-6, 1e-6
+            3e-4, 1e-4,
+            5e-5, 3e-5, 1e-5,
+            5e-6, 1e-6
         ],
         'alpha': 0.2,
         'beta': 10,
@@ -75,15 +75,15 @@ if __name__ == "__main__":
     create_folder(params.node2vec_emb_folder)
     # ==================== Data =========================
 
-    # graphs, idx2node = read_dynamic_graph(
-    #     folder_path=params.dataset_folder,
-    #     limit=None,
-    #     convert_to_idx=True
-    # )
-    g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
-    g2 = nx.gnm_random_graph(n=15, m=30, seed=6)
-    g3 = nx.gnm_random_graph(n=30, m=100, seed=6)
-    graphs = [g1, g2, g3]
+    graphs, idx2node = read_dynamic_graph(
+        folder_path=params.dataset_folder,
+        limit=None,
+        convert_to_idx=True
+    )
+    # g1 = nx.gnm_random_graph(n=10, m=15, seed=6)
+    # g2 = nx.gnm_random_graph(n=15, m=30, seed=6)
+    # g3 = nx.gnm_random_graph(n=30, m=100, seed=6)
+    # graphs = [g1, g2, g3]
 
     print("Number graphs: ", len(graphs))
     print("Origin graphs:")
