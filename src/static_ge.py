@@ -94,7 +94,7 @@ class TStaticGE(object):
         graph_dataset = GraphDataset(A=self.A, L=self.L)
         if batch_size is None:
             batch_size = self.input_dim
-        dataloader = DataLoader(graph_dataset, batch_size=batch_size, shuffle=False)
+        dataloader = DataLoader(graph_dataset, batch_size=batch_size, shuffle=shuffle, pin_memory=True)
 
         self.model = self.model.to(device)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=self.l2)

@@ -4,7 +4,7 @@ import networkx as nx
 import numpy as np
 
 from src.data_preprocessing.graph_preprocessing import read_dynamic_graph
-from src.utils.model_training_utils import create_folder, dyngem_alg, node2vec_alg
+from src.utils.model_training_utils import create_folder, dyngem_alg, node2vec_alg, sdne_alg
 from src.utils.graph_util import print_graph_stats
 from src.utils.setting_param import SettingParam
 from src.utils.stable_evaluate import stability_constant
@@ -15,8 +15,9 @@ if __name__ == "__main__":
     dataset_name = "cit_hepth"
     params = {
         # 'algorithm': {
-        'is_dyge': True,
+        'is_dyge': False,
         'is_node2vec': False,
+        'is_sdne': True,
 
         # 'folder_paths': {
         'dataset_folder': f"./data/{dataset_name}",
@@ -52,8 +53,12 @@ if __name__ == "__main__":
         'l2': 0.0005,
         'net2net_applied': False,
         'ck_length_saving': 50,
-        'ck_folder': f'./saved_data/{dataset_name}/cit_hepth_stability_ck',
+        'ck_folder': f'./saved_data/models/{dataset_name}_stability_ck',
         'dyge_shuffle': True,
+
+        # SDNE
+        'sdne_learning_rate': 5e-5,
+        'sdne_shuffle': True,
 
         # 'link_pred_config': {
         'show_acc_on_edge': True,
@@ -99,11 +104,20 @@ if __name__ == "__main__":
     # ============== Node2Vec ============
     if params.is_node2vec:
         print("=============== Node2vec ============")
-        # Just need train last graph
         dy_embeddings = node2vec_alg(
             graphs=graphs,
             embedding_dim=params.embedding_dim,
             folder_path=params.node2vec_emb_folder,
             is_load_emb=params.is_load_n2v_model
         )
+        print(f"Stability constant= {stability_constant(graphs=graphs, embeddings=dy_embeddings)}")
+
+    # == == == == == == == = SDNE == == == == == ==
+    if params.is_sdne:
+        print("=============== SDNE ============")
+        dy_embeddings = sdne_alg(
+            graphs=graphs,
+            params=params
+        )
+
         print(f"Stability constant= {stability_constant(graphs=graphs, embeddings=dy_embeddings)}")

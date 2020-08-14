@@ -6,6 +6,7 @@ class SettingParam(object):
         # algorithms
         self.is_dyge = None
         self.is_node2vec = None
+        self.is_sdne = None
 
         #  folder_paths
         self.dataset_folder = None
@@ -37,6 +38,10 @@ class SettingParam(object):
         self.ck_folder = None
         self.dyge_shuffle = None
         self.dyge_resume_training = None
+
+        # sdne_config
+        self.sdne_learning_rate = None
+        self.sdne_shuffle = None
 
         #  link_pred_config
         self.show_acc_on_edge = None
