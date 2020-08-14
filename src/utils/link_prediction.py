@@ -159,6 +159,9 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_p
         if G_partial.degree[u] < 2 or G_partial.degree[v] < 2:
             continue
         G_partial.remove_edge(u, v)
+        if G_partial.number_of_nodes() != G.number_of_nodes():
+            print("Delete wrong egde: {} {}".format(u, v))
+            G_partial.add_edge(u, v)
         # TODO: Check connected component
         # if nx.number_connected_components(G_partial) == 1 and G_partial.number_of_nodes() == initial_nodes_len:
         omissible_links.append({
@@ -166,6 +169,8 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_p
             'node_2': v
         })
         dropped_node_count += 1
+
+    assert G_partial.number_of_nodes() == G.number_of_nodes()
 
     # create data frame of removable edges
     removed_edge_graph_df = pd.DataFrame(data=omissible_links, columns=['node_1', 'node_2'])

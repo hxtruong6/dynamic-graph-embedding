@@ -59,15 +59,18 @@ def train_model_at_index(dy_ge: TDynGE, params: SettingParam, model_idx=None):
         if not params.dyge_resume_training and i == 0:
             is_load_from_previous_model = True  # Prevent re-train model
         print("\tLearning rate = ", lr)
-        training_time = dy_ge.train_at(model_index=model_idx,
-                                       learning_rate=lr,
-                                       prop_size=params.prop_size, epochs=params.epochs, skip_print=params.skip_print,
-                                       net2net_applied=params.net2net_applied,
-                                       batch_size=params.batch_size, folder_path=params.dyge_weight_folder,
-                                       ck_config=CheckpointConfig(number_saved=params.ck_length_saving,
-                                                                  folder_path=params.ck_folder),
-                                       early_stop=params.early_stop,
-                                       is_load_from_previous_model=is_load_from_previous_model)
+        training_time = dy_ge.train_at(
+            model_index=model_idx,
+            learning_rate=lr,
+            prop_size=params.prop_size, epochs=params.epochs, skip_print=params.skip_print,
+            net2net_applied=params.net2net_applied,
+            batch_size=params.batch_size, folder_path=params.dyge_weight_folder,
+            ck_config=CheckpointConfig(number_saved=params.ck_length_saving,
+                                       folder_path=params.ck_folder),
+            early_stop=params.early_stop,
+            is_load_from_previous_model=is_load_from_previous_model,
+            shuffle=params.dyge_shuffle
+        )
         print(f"Train model of graph {model_idx} in {training_time}s\n")
 
     print(f"\nFinish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
@@ -157,10 +160,11 @@ def sdne_alg(graphs, params: SettingParam, index=None):
                        beta=params.beta)
         ck_point = CheckpointConfig(number_saved=params.ck_length_saving, folder_path=params.sdne_weight_folder + "_ck",
                                     index=i)
-        ge.train(batch_size=params.batch_size, epochs=params.epochs, skip_print=params.skip_print,
-                 learning_rate=params.sdne_learning_rate, early_stop=params.early_stop,
-                 plot_loss=True, shuffle=params.sdne_shuffle, ck_config=ck_point
-                 )
+        ge.train(
+            batch_size=params.batch_size, epochs=params.epochs, skip_print=params.skip_print,
+            learning_rate=params.sdne_learning_rate, early_stop=params.early_stop,
+            plot_loss=True, shuffle=params.sdne_shuffle, ck_config=ck_point
+        )
         dy_embeddings.append(ge.get_embedding())
     return dy_embeddings
 
