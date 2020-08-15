@@ -92,7 +92,7 @@ for i in range(k):
 
 """# Save dynamic graph"""
 
-NUMBER_SAVE_GRAPH = 6
+NUMBER_SAVE_GRAPH = 5
 
 folder = "./data/cit_hepth"
 if not os.path.exists(folder):

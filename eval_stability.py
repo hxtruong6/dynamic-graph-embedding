@@ -41,18 +41,18 @@ if __name__ == "__main__":
         # 'dyge_config': {
         'prop_size': 0.3,
         'embedding_dim': 100,
-        'epochs': 200,
-        'skip_print': 20,
+        'epochs': 50,
+        'skip_print': 10,
         'batch_size': None,  # 512
         'early_stop': 200,  # 100
         'learning_rate_list': [
             1e-3,
-            5e-4,
-            1e-4,
-            5e-5,
-            1e-5,
-            5e-6,
-            1e-6
+            # 5e-4,
+            # 1e-4,
+            # 5e-5,
+            # 1e-5,
+            # 5e-6,
+            # 1e-6
         ],
         'alpha': 0.2,
         'beta': 10,

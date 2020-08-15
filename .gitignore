@@ -133,3 +133,4 @@ processed_data/*
 *.zip
 
 examples/saved_data/*
+saved_data/*

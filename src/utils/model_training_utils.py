@@ -93,8 +93,8 @@ def dyngem_alg(graphs, params: SettingParam):
     if params.is_load_dyge_model:
         print("\n-----------\nStart load model...")
         dy_ge.load_models(folder_path=params.dyge_weight_folder)
-    elif params.specific_dyge_model_index is not None:
-        train_model_at_index(dy_ge, params)
+        if params.specific_dyge_model_index is not None:
+            train_model_at_index(dy_ge, params)
     else:
         train_model(dy_ge, params=params)
 
@@ -167,7 +167,7 @@ def sdne_alg(graphs, params: SettingParam, index=None):
         if params.sdne_load_model:
             print(f"[{i}] SDNE load model...")
             model = load_custom_model(filepath=sdne_model_path)
-            ge = TStaticGE(G=g, model=model, alpha=params.alpha, beta=params.beta, activation=params.sdne_activation)
+            ge = TStaticGE(G=g, model=model, alpha=params.alpha, beta=params.beta)
 
             if params.sdne_resume_training:
                 _sdne_train()
@@ -177,9 +177,9 @@ def sdne_alg(graphs, params: SettingParam, index=None):
                 input_dim=g.number_of_nodes(),
                 embedding_dim=params.embedding_dim
             )
-            ge = TStaticGE(G=g, embedding_dim=params.embedding_dim, hidden_dims=hidden_dims, l2=1e-5,
+            ge = TStaticGE(G=g, embedding_dim=params.embedding_dim, hidden_dims=hidden_dims, l2=params.l2,
                            alpha=params.alpha,
-                           beta=params.beta)
+                           beta=params.beta, activation=params.sdne_activation)
             _sdne_train()
         save_custom_model(model=ge.get_model(), filepath=sdne_model_path)
 

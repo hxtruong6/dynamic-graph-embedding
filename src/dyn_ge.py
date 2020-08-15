@@ -81,13 +81,14 @@ class TDynGE(object):
                 hidden_dims=hidden_dims,
                 l1=self.l1,
                 l2=self.l2,
+                activation=self.activation
             )
         else:
             prev_ae = load_custom_model(filepath=join(folder_path, f"graph_{index - 1}"))
             autoencoder = handle_expand_model(model=prev_ae, input_dim=input_dim,
                                               prop_size=prop_size, net2net_applied=net2net_applied)
 
-        ge = TStaticGE(G=g, model=autoencoder, alpha=self.alpha, beta=self.beta, activation=self.activation)
+        ge = TStaticGE(G=g, model=autoencoder, alpha=self.alpha, beta=self.beta)
         return ge
 
     def train(self, folder_path, prop_size=0.3, batch_size=64, epochs=100, skip_print=5,
@@ -183,7 +184,7 @@ class TDynGE(object):
 
         # Trick for get length of saved models
         files = [f for f in listdir(folder_path) if isfile(join(folder_path, f))]
-        length = int(len(files) / 2)
+        length = len(files) // 2
 
         if length != len(self.graphs):
             raise Exception("There are NO saved training data")
@@ -192,7 +193,7 @@ class TDynGE(object):
             filepath = join(folder_path, f"graph_{i}")
             model = load_custom_model(filepath=filepath)
 
-            ge = TStaticGE(G=self.graphs[i], model=model, alpha=self.alpha, beta=self.beta, activation=self.activation)
+            ge = TStaticGE(G=self.graphs[i], model=model, alpha=self.alpha, beta=self.beta)
             self.static_ges.append(ge)
         print(f"{round(time() - start_time, 2)}s")
 

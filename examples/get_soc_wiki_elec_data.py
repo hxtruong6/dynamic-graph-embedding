@@ -27,8 +27,8 @@ import os
 """# Download"""
 
 link_dts = 'http://nrvis.com/download/data/dynamic/soc-wiki-elec.zip'
-dts_zip = 'soc_wiki-elec.zip'
-dts_name = 'soc_wiki-elec.edges'
+dts_zip = 'soc-wiki-elec.zip'
+dts_name = 'soc-wiki-elec.edges'
 
 r1 = requests.get(link_dts, allow_redirects=True)
 open(dts_zip, 'wb').write(r1.content)
@@ -98,7 +98,7 @@ for i in range(k):
 
 NUMBER_SAVE_GRAPH = 8
 
-folder = "./data/"
+folder = "./data/soc_wiki"
 if not os.path.exists(folder):
     os.makedirs(folder)
 
