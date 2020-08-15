@@ -62,12 +62,16 @@ if __name__ == "__main__":
         'ck_length_saving': 50,
         'ck_folder': f'./saved_data/models/{dataset_name}_stability_ck',
         'dyge_shuffle': True,
+        'dyge_activation': 'relu',
+
 
         # SDNE
         'sdne_learning_rate': 5e-5,
         'sdne_shuffle': True,
         'sdne_load_model': False,
         'sdne_resume_training': False,
+        'sdne_activation': 'relu',
+
 
         # 'link_pred_config': {
         'show_acc_on_edge': True,

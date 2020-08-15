@@ -13,7 +13,7 @@ from src.utils.model_utils import get_hidden_layer, handle_expand_model, save_cu
 
 
 class TDynGE(object):
-    def __init__(self, graphs, embedding_dim, l1=0.001, l2=0.0005, alpha=0.2, beta=10):
+    def __init__(self, graphs, embedding_dim, l1=0.001, l2=0.0005, alpha=0.2, beta=10, activation='relu'):
         super(TDynGE, self).__init__()
         if not graphs:
             raise ValueError("Must be provide graphs data")
@@ -26,12 +26,13 @@ class TDynGE(object):
         self.alpha = alpha
         self.beta = beta
         self.static_ges = []
+        self.activation = activation
 
     def get_all_embeddings(self):
         return [ge.get_embedding() for ge in self.static_ges]
 
     def get_embedding(self, index):
-        if index < 0 or index >= self.graph_len:
+        if index < 0 or index >= self.size:
             raise ValueError("index is invalid!")
         return self.static_ges[index].get_embedding()
 
@@ -86,7 +87,7 @@ class TDynGE(object):
             autoencoder = handle_expand_model(model=prev_ae, input_dim=input_dim,
                                               prop_size=prop_size, net2net_applied=net2net_applied)
 
-        ge = TStaticGE(G=g, model=autoencoder, alpha=self.alpha, beta=self.beta)
+        ge = TStaticGE(G=g, model=autoencoder, alpha=self.alpha, beta=self.beta, activation=self.activation)
         return ge
 
     def train(self, folder_path, prop_size=0.3, batch_size=64, epochs=100, skip_print=5,
@@ -191,7 +192,7 @@ class TDynGE(object):
             filepath = join(folder_path, f"graph_{i}")
             model = load_custom_model(filepath=filepath)
 
-            ge = TStaticGE(G=self.graphs[i], model=model, alpha=self.alpha, beta=self.beta)
+            ge = TStaticGE(G=self.graphs[i], model=model, alpha=self.alpha, beta=self.beta, activation=self.activation)
             self.static_ges.append(ge)
         print(f"{round(time() - start_time, 2)}s")
 

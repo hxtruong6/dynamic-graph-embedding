@@ -85,6 +85,7 @@ class TAutoencoder(nn.Module):
         self.hidden_dims = hidden_dims
         self.l1 = l1
         self.l2 = l2
+        self.activation = activation
 
         # ======== Create layers
         self.encoder = TPartCoder(input_dim=input_dim, output_dim=embedding_dim, hidden_dims=hidden_dims,
@@ -141,7 +142,8 @@ class TAutoencoder(nn.Module):
             "embedding_dim": self.embedding_dim,
             "hidden_dims": self.hidden_dims,
             "l1": self.l1,
-            "l2": self.l2
+            "l2": self.l2,
+            "activation": self.activation
         }
         return config_layer
 

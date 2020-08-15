@@ -87,7 +87,8 @@ def dyngem_alg(graphs, params: SettingParam):
     # ----------- Training area -----------
     dy_ge = TDynGE(
         graphs=graphs, embedding_dim=params.embedding_dim,
-        alpha=params.alpha, beta=params.beta, l1=params.l1, l2=params.l2
+        alpha=params.alpha, beta=params.beta, l1=params.l1, l2=params.l2,
+        activation=params.dyge_activation
     )
     if params.is_load_dyge_model:
         print("\n-----------\nStart load model...")
@@ -166,7 +167,7 @@ def sdne_alg(graphs, params: SettingParam, index=None):
         if params.sdne_load_model:
             print(f"[{i}] SDNE load model...")
             model = load_custom_model(filepath=sdne_model_path)
-            ge = TStaticGE(G=g, model=model, alpha=params.alpha, beta=params.beta)
+            ge = TStaticGE(G=g, model=model, alpha=params.alpha, beta=params.beta, activation=params.sdne_activation)
 
             if params.sdne_resume_training:
                 _sdne_train()

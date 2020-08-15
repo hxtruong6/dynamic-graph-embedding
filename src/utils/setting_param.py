@@ -41,12 +41,14 @@ class SettingParam(object):
         self.ck_folder = None
         self.dyge_shuffle = None
         self.dyge_resume_training = None
+        self.dyge_activation = None
 
         # sdne_config
         self.sdne_learning_rate = None
         self.sdne_shuffle = None
         self.sdne_load_model = None
         self.sdne_resume_training = None
+        self.sdne_activation = None
 
         #  link_pred_config
         self.show_acc_on_edge = None
@@ -55,6 +57,26 @@ class SettingParam(object):
 
         for key in kwargs:
             self.__setattr__(key, kwargs[key])
+
+
+#
+# class DyGeParam(object):
+#     def __init__(self, **kwargs):
+#         self.global_seed = None
+#         self.size = None
+#         self.embedding_dim = None
+#         self.l1 = None
+#         self.l2 = None
+#         self.alpha = None
+#
+#         for key in kwargs:
+#             self.__setattr__(key, kwargs[key])
+
+class Dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
 
 
 if __name__ == '__main__':
