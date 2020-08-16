@@ -23,7 +23,6 @@ if __name__ == "__main__":
 
         # 'folder_paths': {
         'dataset_folder': f"./data/{dataset_name}",
-        # 'dataset_folder': f"/media/hxtruong/Personal/College/Thesis/GraphEmbeddingCode/data/soc_wiki",
         'processed_link_pred_data_folder': f"./saved_data/processed_data/{dataset_name}_link_pred",
         'dyge_weight_folder': f"./saved_data/models/{dataset_name}_link_pred",
         'dyge_emb_folder': f"./saved_data/embeddings/{dataset_name}_link_pred",
@@ -37,7 +36,7 @@ if __name__ == "__main__":
         # 'training_config': {
         'is_load_link_pred_data': True,
         'is_load_dyge_model': False,
-        'specific_dyge_model_index': 1,
+        'specific_dyge_model_index': None,
         'dyge_resume_training': False,
 
         'is_load_n2v_model': False,
@@ -66,7 +65,7 @@ if __name__ == "__main__":
         'ck_length_saving': 50,
         'ck_folder': f'./saved_data/models/{dataset_name}_link_pred_ck',
         'dyge_shuffle': True,
-        'dyge_activation': 'leaky_relu',
+        'dyge_activation': 'relu',
 
         # SDNE
         'sdne_learning_rate': 5e-6,
