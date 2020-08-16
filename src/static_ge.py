@@ -101,10 +101,13 @@ class TStaticGE(object):
         min_loss = 1e6
         count_epoch_no_improves = 0
         train_losses = []
+        is_stop_train = False
         for epoch in range(epochs):
             # for data in dataloader:
             t1 = time()
             epoch_loss = 0
+            if is_stop_train:
+                break
             for step, batch_inp in enumerate(dataloader):
                 A, L = handle_graph_mini_batch(batch_inp)
 
@@ -121,12 +124,13 @@ class TStaticGE(object):
                 epoch_loss += loss
 
                 if loss < 0:
+                    is_stop_train = True
                     print("Stopping training due to negative loss.")
                     break
+
                 # ===================backward====================
                 loss.backward()
                 optimizer.step()
-
 
                 del x, L
                 # ===================log========================
