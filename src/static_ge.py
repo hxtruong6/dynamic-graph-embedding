@@ -200,26 +200,26 @@ class TStaticGE(object):
 
 if __name__ == "__main__":
     # G = get_graph_from_file(filename="../data/email-eu/email-Eu-core.txt")
-    G = nx.gnm_random_graph(n=20, m=40, seed=6)
+    G = nx.gnm_random_graph(n=40, m=100, seed=6)
     print_graph_stats(G)
     pos = nx.spring_layout(G, seed=6)
     draw_graph(G, limit_node=50, pos=pos)
     # print(G.edges)
 
-    embedding_dim = 2
+    embedding_dim = 4
 
     g_hidden_df, hidden_G = preprocessing_graph_for_link_prediction(
         G=G,
         drop_node_percent=0.2,
-        edge_rate=0.08
+        edge_rate=0.1
     )
 
     ge = TStaticGE(G=hidden_G, embedding_dim=embedding_dim, hidden_dims=[16, 8], l2=1e-5, alpha=0.2, beta=10,
-                   activation='tanh')
+                   activation='relu')
     start_time = time()
     ck_point = CheckpointConfig(number_saved=2, folder_path="../data")
-    ge.train(batch_size=1, epochs=2000, skip_print=100,
-             learning_rate=0.0005, early_stop=200, threshold_loss=1e-4,
+    ge.train(batch_size=None, epochs=10000, skip_print=500,
+             learning_rate=5e-5, early_stop=200, threshold_loss=1e-4,
              plot_loss=True, shuffle=True, ck_config=ck_point
              )
 
@@ -231,7 +231,7 @@ if __name__ == "__main__":
     print(embedding[:3])
     print(nx.adjacency_matrix(G).todense()[:3])
     print(reconstructed_graph[:3])
-    link_pred_prec = check_link_prediction(embedding, train_graph=hidden_G, origin_graph=G, check_index=[2, 10, 20])
+    link_pred_prec = check_link_prediction(embedding, train_graph=hidden_G, origin_graph=G, k_query=[2, 10, 20])
     print("Precision@K: ", link_pred_prec)
 
     run_link_pred_evaluate(
@@ -248,7 +248,7 @@ if __name__ == "__main__":
     # save_custom_model(ge.get_model(), filepath="../models/email-eu/email-eu")
 
     # plot_embedding(embeddings=embeddings)
-    plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0)
+    plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0.6)
 
     # print("========= Node2vec ==========")
     # node2vec = Node2Vec(graph=hidden_G,

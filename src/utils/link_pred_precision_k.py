@@ -2,72 +2,69 @@ import numpy as np
 import networkx as nx
 
 
-# class Dotdict(dict):
-#     """dot.notation access to dictionary attributes"""
-#     __getattr__ = dict.get
-#     __setattr__ = dict.__setitem__
-#     __delattr__ = dict.__delitem__
-
-
-def getSimilarity(result):
-    print("getting similarity...")
+def get_similarity(result):
     return np.dot(result, result.T)
 
 
-def check_reconstruction(embedding, graph_data, check_index):
-    def get_precisionK(embedding, data, max_index):
-        print("get precisionK...")
-        similarity = getSimilarity(embedding).reshape(-1)
-        sortedInd = np.argsort(similarity)
-        cur = 0
-        count = 0
-        precisionK = []
-        sortedInd = sortedInd[::-1]
+def check_reconstruction(embedding, graph: nx.Graph, k_query):
+    def get_precisionK(max_index):
+        print("Get Precision@K...")
+        similarity = get_similarity(embedding).reshape(-1)
+        sortedInd = np.argsort(similarity)[::-1]
+        K = 0
+        true_pred_count = 0
+        prec_k_list = []
+        node_size = graph.number_of_nodes()
         for ind in sortedInd:
-            x = ind / data.N
-            y = ind % data.N
-            count += 1
-            if (data.adj_matrix[x].toarray()[0][y] == 1 or x == y):
-                cur += 1
-            precisionK.append(1.0 * cur / count)
-            if count > max_index:
-                break
-        return precisionK
-
-    precisionK = get_precisionK(embedding, graph_data, np.max(check_index))
-    ret = []
-    for index in check_index:
-        print("precisonK[%d] %.2f" % (index, precisionK[index - 1]))
-        ret.append(precisionK[index - 1])
-    return ret
-
-
-def check_link_prediction(embedding, train_graph: nx.Graph, origin_graph: nx.Graph, check_index):
-    def get_precisionK(embedding, train_graph: nx.Graph, origin_graph: nx.Graph, max_index):
-        print("get precisionK...")
-        similarity = getSimilarity(embedding).reshape(-1)
-        sortedInd = np.argsort(similarity)
-        sortedInd = sortedInd[::-1]
-        cur = 0
-        count = 0
-        precisionK = []
-        N = train_graph.number_of_nodes()
-        for ind in sortedInd:
-            x = ind / N
-            y = ind % N
-            if x == y or train_graph.has_edge(x, y):
+            u = ind // node_size
+            v = ind % node_size
+            print(f"{u} - {v}| Link: {graph.has_edge(u, v)} | Similarity: {similarity[u][v]}")
+            if u == v:
                 continue
-            count += 1
-            if origin_graph.has_edge(x, y):
-                cur += 1
-            precisionK.append(1.0 * cur / count)
-            if count > max_index:
-                break
-        return precisionK
+            if graph.has_edge(u, v):
+                true_pred_count += 1
+            K += 1
 
-    precisionK = get_precisionK(embedding, train_graph, origin_graph, np.max(check_index))
-    ret = []
-    for index in check_index:
-        print("precisonK[%d] %.2f" % (index, precisionK[index - 1]))
-        ret.append(precisionK[index - 1])
-    return ret
+            prec_k_list.append(true_pred_count / K)
+            if K > max_index:
+                break
+        return prec_k_list
+
+    precisionK_list = get_precisionK(np.max(k_query))
+    k_query_res = []
+    for k in k_query:
+        print(f"Precison@K({k})={precisionK_list[k - 1]}")
+        k_query_res.append(precisionK_list[k - 1])
+    return k_query_res
+
+
+def check_link_prediction(embedding, train_graph: nx.Graph, origin_graph: nx.Graph, k_query):
+    def get_precisionK(max_index):
+        print("\nGet Precision@K ...")
+        similarity = get_similarity(embedding).reshape(-1)
+        sortedInd = np.argsort(similarity)[::-1]
+        true_pred_count = 0
+        K = 0
+        prec_k_list = []
+        node_size = train_graph.number_of_nodes()
+        for ind in sortedInd:
+            u = ind // node_size
+            v = ind % node_size
+            if u == v or not origin_graph.has_edge(u, v):
+                continue
+
+            K += 1
+            if train_graph.has_edge(u, v):
+                true_pred_count += 1
+
+            prec_k_list.append(true_pred_count / K)
+            if K > max_index:
+                break
+        return prec_k_list
+
+    precisionK_list = get_precisionK(np.max(k_query))
+    k_query_res = []
+    for k in k_query:
+        print(f"Precison@{k}={precisionK_list[k - 1]}")
+        k_query_res.append(precisionK_list[k - 1])
+    return k_query_res
