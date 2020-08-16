@@ -90,7 +90,7 @@ def run_link_pred_evaluate(graph_df, embeddings, alg=None, num_boost_round=10000
     y_pred = model.predict(X_test)
 
     try:
-        print(f"#----\nROC AUC Score: {round(roc_auc_score(y_test, y_pred), 2)}")
+        print(f"#----\nROC AUC Score: {round(roc_auc_score(y_test, y_pred), 4)}")
     except ValueError:
         print("ROC AUC has only one class: ", int(y_pred[0]))
     # roc_curve(y_test, y_pred)

@@ -103,8 +103,8 @@ class TStaticGE(object):
         train_losses = []
         for epoch in range(epochs):
             # for data in dataloader:
-            loss = None
             t1 = time()
+            epoch_loss = 0
             for step, batch_inp in enumerate(dataloader):
                 A, L = handle_graph_mini_batch(batch_inp)
 
@@ -118,27 +118,34 @@ class TStaticGE(object):
 
                 x_hat, y = self.model(x)
                 loss = self._compute_loss(x, x_hat, y, L)
+                epoch_loss += loss
+
+                if loss < 0:
+                    print("Stopping training due to negative loss.")
+                    break
                 # ===================backward====================
                 loss.backward()
                 optimizer.step()
 
+
                 del x, L
                 # ===================log========================
-            train_losses.append(round(float(loss), 4))
+            train_losses.append(round(float(epoch_loss), 4))
             if (epoch + 1) % skip_print == 0 or epoch == epochs - 1 or epoch == 0:
-                print('Epoch [{}/{}] \t\tloss:{:.4f} \t\ttime:{:.2f}s'.format(epoch + 1, epochs, loss, time() - t1))
+                print(
+                    'Epoch [{}/{}] \t\tloss:{:.4f} \t\ttime:{:.2f}s'.format(epoch + 1, epochs, epoch_loss, time() - t1))
 
             if ck_config is not None and ck_config.NumberSaved == epoch:
                 save_custom_model(model=self.model, filepath=join(ck_config.FolderPath, f"graph_{ck_config.Index}"))
 
-            if loss < min_loss - threshold_loss:
+            if epoch_loss < min_loss - threshold_loss:
                 count_epoch_no_improves = 0
-                min_loss = loss
+                min_loss = epoch_loss
             else:
                 count_epoch_no_improves += 1
 
             if early_stop is not None and count_epoch_no_improves == early_stop:
-                print('Early stopping!\t Epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, epochs, loss))
+                print('Early stopping!\t Epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, epochs, epoch_loss))
                 break
 
             torch.cuda.empty_cache()
@@ -204,10 +211,10 @@ if __name__ == "__main__":
     )
 
     ge = TStaticGE(G=hidden_G, embedding_dim=embedding_dim, hidden_dims=[16, 8], l2=1e-5, alpha=0.2, beta=10,
-                   activation='leaky_relu')
+                   activation='tanh')
     start_time = time()
     ck_point = CheckpointConfig(number_saved=2, folder_path="../data")
-    ge.train(batch_size=64, epochs=10000, skip_print=500,
+    ge.train(batch_size=1, epochs=2000, skip_print=100,
              learning_rate=0.0005, early_stop=200, threshold_loss=1e-4,
              plot_loss=True, shuffle=True, ck_config=ck_point
              )
@@ -237,7 +244,7 @@ if __name__ == "__main__":
     # save_custom_model(ge.get_model(), filepath="../models/email-eu/email-eu")
 
     # plot_embedding(embeddings=embeddings)
-    plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0.6)
+    plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0)
 
     # print("========= Node2vec ==========")
     # node2vec = Node2Vec(graph=hidden_G,
