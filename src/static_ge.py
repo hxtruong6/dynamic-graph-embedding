@@ -14,7 +14,7 @@ from src.data_preprocessing.graph_preprocessing import next_datasets, get_graph_
 from src.utils.autoencoder import TAutoencoder
 from src.utils.checkpoint_config import CheckpointConfig
 from src.utils.graph_util import draw_graph, print_graph_stats
-from src.utils.link_pred_precision_k import check_link_prediction
+from src.utils.link_pred_precision_k import check_link_predictionK
 from src.utils.link_prediction import preprocessing_graph_for_link_prediction, run_link_pred_evaluate
 from src.utils.model_utils import save_custom_model
 from src.utils.visualize import plot_reconstruct_graph, plot_embeddings_with_labels, plot_losses
@@ -231,7 +231,7 @@ if __name__ == "__main__":
     print(embedding[:3])
     print(nx.adjacency_matrix(G).todense()[:3])
     print(reconstructed_graph[:3])
-    link_pred_prec = check_link_prediction(embedding, train_graph=hidden_G, origin_graph=G, k_query=[2, 10, 20])
+    link_pred_prec = check_link_predictionK(embedding, train_graph=hidden_G, origin_graph=G, k_query=[2, 10, 20])
     print("Precision@K: ", link_pred_prec)
 
     run_link_pred_evaluate(

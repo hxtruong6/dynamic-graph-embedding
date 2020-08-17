@@ -17,6 +17,7 @@ class SettingParam(object):
         self.node2vec_emb_folder = None
 
         self.sdne_weight_folder = None
+        self.sdne_emb_folder = None
 
         #  training_config
         self.is_load_link_pred_data = None

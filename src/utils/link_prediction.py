@@ -16,11 +16,9 @@ def get_unconnected_pairs_(G: nx.Graph, cutoff=2, n_limit=None):
     appended_pairs = {}
 
     nodes = list(G.nodes())
-    np.random.shuffle(nodes)
-    for u in nodes:
+    for u in edges_len.keys():
         if u not in appended_pairs:
             appended_pairs[u] = {}
-
         for v in edges_len[u].keys():
             if v not in appended_pairs:
                 appended_pairs[v] = {}
@@ -32,8 +30,11 @@ def get_unconnected_pairs_(G: nx.Graph, cutoff=2, n_limit=None):
 
                 appended_pairs[u][v] = True
                 appended_pairs[v][u] = True
-            if n_limit is not None and len(unconnected_pairs) >= n_limit:
-                break
+
+    if n_limit is not None:
+        unconnected_pairs = np.random.choice(unconnected_pairs, size=min(n_limit, len(unconnected_pairs)),
+                                             replace=False)
+        unconnected_pairs = list(unconnected_pairs)
 
     return unconnected_pairs
 
@@ -84,7 +85,7 @@ def run_link_pred_evaluate(graph_df, embeddings, alg=None, num_boost_round=10000
                            valid_sets=test_data,
                            num_boost_round=num_boost_round,
                            early_stopping_rounds=early_stopping_rounds,
-                           verbose_eval=100,
+                           verbose_eval=200,
                            )
 
     y_pred = model.predict(X_test)
@@ -188,7 +189,7 @@ def preprocessing_graph_for_link_prediction(G: nx.Graph, k_length=2, drop_node_p
     temp_time = time()
     print("\tGet possible unconnected link...", end=" ")
     if edge_rate is not None:
-        expect_unconnected_links_len = len(removed_edge_graph_df) * (1 - edge_rate) / edge_rate
+        expect_unconnected_links_len = int(len(removed_edge_graph_df) * (1 - edge_rate) / edge_rate)
         all_unconnected_pairs = get_unconnected_pairs_(G, cutoff=k_length, n_limit=expect_unconnected_links_len)
     else:
         all_unconnected_pairs = get_unconnected_pairs_(G, cutoff=k_length)
