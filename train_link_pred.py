@@ -14,11 +14,11 @@ from src.utils.setting_param import SettingParam
 warnings.filterwarnings("ignore")
 
 if __name__ == "__main__":
-    dataset_name = "cit_hepth"
+    dataset_name = "soc_wiki"
     params = {
         # 'algorithm': {
-        'is_dyge': True,
-        'is_node2vec': False,
+        'is_dyge': False,
+        'is_node2vec': True,
         'is_sdne': False,
 
         # 'folder_paths': {
@@ -33,8 +33,10 @@ if __name__ == "__main__":
 
         'global_seed': 6,
 
+        # Processed data
+        'is_load_link_pred_data': True,
+
         # 'training_config': {
-        'is_load_link_pred_data': False,
         'is_load_dyge_model': False,
         'specific_dyge_model_index': None,
         'dyge_resume_training': False,
@@ -148,13 +150,13 @@ if __name__ == "__main__":
     if params.is_node2vec:
         print("=============== Node2vec ============")
         # Just need train last graph
-        hidden_embedding = node2vec_alg(
+        dy_embeddings = node2vec_alg(
             graphs=graphs,
             embedding_dim=params.embedding_dim,
             index=len(graphs) - 1,
             folder_path=params.node2vec_emb_folder
         )
-        link_pred_eva(g_hidden_df=g_hidden_df, hidden_dy_embedding=hidden_embedding)
+        link_pred_eva(g_hidden_df=g_hidden_df, hidden_dy_embedding=dy_embeddings[0])
 
     # == == == == == == == = SDNE == == == == == ==
     if params.is_sdne:

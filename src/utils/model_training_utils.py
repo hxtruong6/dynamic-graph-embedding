@@ -113,33 +113,31 @@ def dyngem_alg(graphs, params: SettingParam):
     return dy_ge, dy_embeddings
 
 
-def _node2vec_alg(graph, embedding_dim, filename=None, is_load_emb=False):
+def _node2vec_alg(graph, embedding_dim, filename=None):
     node2vec = Node2Vec(graph=graph,
                         dimensions=embedding_dim,
                         walk_length=80,
                         num_walks=20,
                         workers=2)  # Use temp_folder for big graphs
     node2vec_model = node2vec.fit()
-    if is_load_emb:
-        embedding = node2vec_model.wv.load_word2vec_format(filename)
-    else:
-        embedding = [np.array(node2vec_model[str(u)]) for u in sorted(graph.nodes)]
-        if filename is not None:
-            node2vec_model.wv.save_word2vec_format(filename)
+    embedding = [np.array(node2vec_model[str(u)]) for u in sorted(graph.nodes)]
+    if filename is not None:
+        node2vec_model.wv.save_word2vec_format(filename, binary=False)
 
     return np.array(embedding)
 
 
-def node2vec_alg(graphs, embedding_dim, index=None, folder_path=None, is_load_emb=False):
+def node2vec_alg(graphs, embedding_dim, index=None, folder_path=None):
     dy_embeddings = []
-    # TODO: set is_load_emb
-    is_load_emb = False
-    if index is not None and index < len(graphs):
-        return _node2vec_alg(graphs[index], embedding_dim=embedding_dim, filename=join(folder_path, "n2v_emb"),
-                             is_load_emb=is_load_emb)
+
+    if index is not None and (index < 0 or index >= len(graphs)):
+        raise ValueError(f"Out of index = {index} in graph list.")
+
     for idx, g in enumerate(graphs):
+        if index is not None and index != idx:
+            continue
         embedding = _node2vec_alg(graph=g, embedding_dim=embedding_dim,
-                                  filename=join(folder_path, f"n2v_emb{idx}"), is_load_emb=is_load_emb)
+                                  filename=join(folder_path, f"n2v_emb_{idx}"))
         dy_embeddings.append(embedding)
     dy_embeddings = np.array(dy_embeddings)
     return dy_embeddings
