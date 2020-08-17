@@ -76,11 +76,12 @@ def train_model_at_index(dy_ge: TDynGE, params: SettingParam, model_idx=None):
     print(f"\nFinish total training: {round(time() - start_time_train, 2)}s\n--------------\n")
 
 
-def check_current_loss_model(dy_ge: TDynGE, weight_model_folder):
+def check_current_loss_model(graphs, dy_ge: TDynGE, weight_model_folder):
+    print("\nCheck current loss model")
     for model_idx in range(dy_ge.size):
         dy_ge.train_at(model_index=model_idx, folder_path=weight_model_folder,
-                       epochs=1, learning_rate=1e-7,
-                       is_load_from_previous_model=False)
+                       epochs=1, learning_rate=1e-8,
+                       is_load_from_previous_model=False, batch_size=min(8192, graphs[model_idx].number_of_nodes()))
 
 
 def dyngem_alg(graphs, params: SettingParam):
@@ -95,20 +96,15 @@ def dyngem_alg(graphs, params: SettingParam):
         dy_ge.load_models(folder_path=params.dyge_weight_folder)
         if params.specific_dyge_model_index is not None:
             train_model_at_index(dy_ge, params)
+            dy_ge.save_embeddings(folder_path=params.dyge_emb_folder)
     else:
         train_model(dy_ge, params=params)
+        dy_ge.save_embeddings(folder_path=params.dyge_emb_folder)
 
-    # Uncomment to know current loss value
-    print("Check current loss model")
-    check_current_loss_model(dy_ge, weight_model_folder=params.dyge_weight_folder)
+    if params.show_loss:
+        check_current_loss_model(graphs, dy_ge, weight_model_folder=params.dyge_weight_folder)
 
-    print("Saving embeddings...")
-    dy_ge.save_embeddings(folder_path=params.dyge_emb_folder)
-
-    # print("Loading embedding...")
-    # dy_embeddings = dy_ge.load_embeddings(folder_path=embeddings_folder)
     dy_embeddings = dy_ge.get_all_embeddings()
-    # print(np.array_equal(dy_embeddings, dyn))
 
     return dy_ge, dy_embeddings
 
@@ -122,7 +118,7 @@ def _node2vec_alg(graph, embedding_dim, filename=None):
     node2vec_model = node2vec.fit()
     embedding = [np.array(node2vec_model[str(u)]) for u in sorted(graph.nodes)]
     if filename is not None:
-        node2vec_model.wv.save_word2vec_format(filename, binary=False)
+        node2vec_model.wv.save_word2vec_format(filename, binary=True)
 
     return np.array(embedding)
 
@@ -169,6 +165,7 @@ def sdne_alg(graphs, params: SettingParam, index=None):
 
             if params.sdne_resume_training:
                 _sdne_train()
+                ge.save_embedding(filepath=join(params.sdne_emb_folder, f"_{i}"))
         else:
             hidden_dims = get_hidden_layer(
                 prop_size=params.prop_size,
@@ -179,6 +176,7 @@ def sdne_alg(graphs, params: SettingParam, index=None):
                            alpha=params.alpha,
                            beta=params.beta, activation=params.sdne_activation)
             _sdne_train()
+            ge.save_embedding(filepath=join(params.sdne_emb_folder, f"_{i}"))
         save_custom_model(model=ge.get_model(), filepath=sdne_model_path)
 
         dy_embeddings.append(ge.get_embedding())

@@ -198,6 +198,7 @@ class TDynGE(object):
         print(f"{round(time() - start_time, 2)}s")
 
     def save_embeddings(self, folder_path):
+        print("Saving embeddings...")
         if not exists(folder_path):
             os.makedirs(folder_path)
         for idx, ge in enumerate(self.static_ges):

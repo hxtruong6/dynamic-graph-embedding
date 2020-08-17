@@ -2,6 +2,7 @@ class SettingParam(object):
 
     def __init__(self, **kwargs):
         self.global_seed = None
+        self.show_loss = None
 
         # algorithms
         self.is_dyge = None
