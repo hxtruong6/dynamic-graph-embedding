@@ -3,6 +3,7 @@ class SettingParam(object):
     def __init__(self, **kwargs):
         self.global_seed = None
         self.show_loss = None
+        self.dataset_name = None
 
         # algorithms
         self.is_dyge = None
@@ -23,7 +24,6 @@ class SettingParam(object):
         #  training_config
         self.is_load_link_pred_data = None
         self.is_load_dyge_model = None
-        self.is_load_n2v_model = None
         self.specific_dyge_model_index = None
 
         #  dyge_config
@@ -59,6 +59,17 @@ class SettingParam(object):
 
         for key in kwargs:
             self.__setattr__(key, kwargs[key])
+
+    def print(self):
+        print(vars(self))
+        print("\n== Param ==")
+        for k in self.__dict__:
+            if type(self.__getattribute__(k)) == int or type(self.__getattribute__(k)) == float or type(
+                    self.__getattribute__(k)) == list or type(self.__getattribute__(k)) == bool:
+                print(f"\t'{k}': {self.__getattribute__(k)}")
+            elif type(self.__getattribute__(k)) == str:
+                print(f"\t'{k}': \"{self.__getattribute__(k)}\"")
+        print("==========\n")
 
 
 #

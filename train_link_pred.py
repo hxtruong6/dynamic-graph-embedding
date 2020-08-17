@@ -5,6 +5,7 @@ import networkx as nx
 import numpy as np
 
 from src.data_preprocessing.graph_preprocessing import read_dynamic_graph
+from src.utils.config_file import read_config_file
 from src.utils.model_training_utils import create_folder, dyngem_alg, link_pred_eva, node2vec_alg, sdne_alg
 from src.utils.data_utils import save_processed_data, load_single_processed_data
 from src.utils.graph_util import print_graph_stats
@@ -14,77 +15,76 @@ from src.utils.setting_param import SettingParam
 warnings.filterwarnings("ignore")
 
 if __name__ == "__main__":
-    dataset_name = "soc_wiki"
-    params = {
-        # 'algorithm': {
-        'is_dyge': True,
-        'is_node2vec': False,
-        'is_sdne': False,
+    # dataset_name = "soc_wiki"
+    # params = {
+    #     # 'algorithm': {
+    #     'is_dyge': True,
+    #     'is_node2vec': False,
+    #     'is_sdne': False,
+    #
+    #     # 'folder_paths': {
+    #     'dataset_folder': f"./data/{dataset_name}",
+    #     'processed_link_pred_data_folder': f"./saved_data/processed_data/{dataset_name}_link_pred",
+    #
+    #     'dyge_weight_folder': f"./saved_data/models/{dataset_name}_link_pred",
+    #     'dyge_emb_folder': f"./saved_data/embeddings/{dataset_name}_link_pred",
+    #
+    #     'node2vec_emb_folder': f"./saved_data/node2vec_emb/{dataset_name}_link_pred",
+    #
+    #     'sdne_weight_folder': f"./saved_data/sdne_models/{dataset_name}_link_pred",
+    #     'sdne_emb_folder': f"./saved_data/sdne_emb/{dataset_name}_link_pred",
+    #
+    #     'global_seed': 6,
+    #
+    #     # Processed data
+    #     'is_load_link_pred_data': True,
+    #
+    #     # 'training_config': {
+    #     'is_load_dyge_model': True,
+    #     'specific_dyge_model_index': None,
+    #     'dyge_resume_training': False,
+    #
+    #     # 'dyge_config': {
+    #     'prop_size': 0.3,
+    #     'embedding_dim': 100,
+    #     'epochs': 200,
+    #     'skip_print': 20,
+    #     'batch_size': None,  # 512
+    #     'early_stop': 200,  # 100
+    #     'learning_rate_list': [
+    #         1e-3,
+    #         # 5e-4,
+    #         # 1e-4,
+    #         # 5e-5,
+    #         # 1e-5,
+    #         # 5e-6,
+    #         # 1e-6
+    #     ],
+    #     'alpha': 0.2,
+    #     'beta': 10,
+    #     'l1': 0.001,
+    #     'l2': 0.0005,
+    #     'net2net_applied': False,
+    #     'ck_length_saving': 50,
+    #     'ck_folder': f'./saved_data/models/{dataset_name}_link_pred_ck',
+    #     'dyge_shuffle': True,
+    #     'dyge_activation': 'relu',
+    #
+    #     # SDNE
+    #     'sdne_learning_rate': 5e-6,
+    #     'sdne_shuffle': True,
+    #     'sdne_load_model': False,
+    #     'sdne_resume_training': False,
+    #     'sdne_activation': 'relu',
+    #
+    #     # 'link_pred_config': {
+    #     'show_acc_on_edge': True,
+    #     'top_k': 10,
+    #     'drop_node_percent': 0.2,
+    # }
+    # params = SettingParam(**params)
 
-        # 'folder_paths': {
-        'dataset_folder': f"./data/{dataset_name}",
-        'processed_link_pred_data_folder': f"./saved_data/processed_data/{dataset_name}_link_pred",
-
-        'dyge_weight_folder': f"./saved_data/models/{dataset_name}_link_pred",
-        'dyge_emb_folder': f"./saved_data/embeddings/{dataset_name}_link_pred",
-
-        'node2vec_emb_folder': f"./saved_data/node2vec_emb/{dataset_name}_link_pred",
-
-        'sdne_weight_folder': f"./saved_data/sdne_models/{dataset_name}_link_pred",
-        'sdne_emb_folder': f"./saved_data/sdne_emb/{dataset_name}_link_pred",
-
-        'global_seed': 6,
-
-        # Processed data
-        'is_load_link_pred_data': False,
-
-        # 'training_config': {
-        'is_load_dyge_model': False,
-        'specific_dyge_model_index': None,
-        'dyge_resume_training': False,
-
-        'is_load_n2v_model': False,
-
-        # 'dyge_config': {
-        'prop_size': 0.3,
-        'embedding_dim': 100,
-        'epochs': 200,
-        'skip_print': 200,
-        'batch_size': None,  # 512
-        'early_stop': 200,  # 100
-        'learning_rate_list': [
-            1e-3,
-            # 5e-4,
-            # 1e-4,
-            # 5e-5,
-            # 1e-5,
-            # 5e-6,
-            # 1e-6
-        ],
-        'alpha': 0.2,
-        'beta': 10,
-        'l1': 0.001,
-        'l2': 0.0005,
-        'net2net_applied': False,
-        'ck_length_saving': 50,
-        'ck_folder': f'./saved_data/models/{dataset_name}_link_pred_ck',
-        'dyge_shuffle': True,
-        'dyge_activation': 'relu',
-
-        # SDNE
-        'sdne_learning_rate': 5e-6,
-        'sdne_shuffle': True,
-        'sdne_load_model': False,
-        'sdne_resume_training': False,
-        'sdne_activation': 'relu',
-
-        # 'link_pred_config': {
-        'show_acc_on_edge': True,
-        'top_k': 10,
-        'drop_node_percent': 0.2,
-    }
-
-    params = SettingParam(**params)
+    params = read_config_file(filepath="link_pred_configuration.ini", config_task="link_pred", verbose=True)
     params.show_loss = False
 
     # ====================== Settings =================
