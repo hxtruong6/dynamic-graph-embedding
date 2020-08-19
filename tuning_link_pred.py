@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
         'global_seed': 6,
         # Processed data
-        'is_load_link_pred_data': False,
+        'is_load_link_pred_data': True,
 
         # 'dyge_config': {
         'prop_size': 0.3,
@@ -128,9 +128,9 @@ if __name__ == "__main__":
         print(f"Isolate nodes: {nx.number_of_isolates(g)}")
 
     # ========== SDNE ============
-    emb_dims = [8, 10]
-    alphas = [0.2]
-    betas = [8]
+    emb_dims = [100, 120]
+    alphas = [0.2, 0.4]
+    betas = [10, 16]
 
     df = []
     for emb_dim in emb_dims:
@@ -142,9 +142,14 @@ if __name__ == "__main__":
     df = pd.DataFrame(data=df, columns=['emb_dim', 'alpha', 'beta', 'mAP'])
     print(df)
 
-    # a4_dims = (23, 8)
-    fig, ax = plt.subplots(nrows=3)
-    sns.lineplot(x='emb_dim', y='mAP', data=df)
-    sns.lineplot(x='alpha', y='mAP', data=df)
-    sns.lineplot(x='beta', y='mAP', data=df)
+    fig_dims = (10, 60)
+    fig, axs = plt.subplots(nrows=6, figsize=fig_dims)
+    sns.lineplot(x='emb_dim', y='mAP', hue='alpha', data=df, ax=axs[0], marker="o")
+    sns.lineplot(x='emb_dim', y='mAP', hue='beta', data=df, ax=axs[1], marker="o")
+    sns.lineplot(x='alpha', y='mAP', hue='emb_dim', data=df, ax=axs[2], marker="o")
+    sns.lineplot(x='alpha', y='mAP', hue='beta', data=df, ax=axs[3], marker="o")
+    sns.lineplot(x='beta', y='mAP', hue='alpha', data=df, ax=axs[4], marker="o")
+    sns.lineplot(x='beta', y='mAP', hue='emb_dim', data=df, ax=axs[5], marker="o")
+
+    plt.savefig("tune.png")
     plt.show()
