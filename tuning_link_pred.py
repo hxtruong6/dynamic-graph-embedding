@@ -70,7 +70,7 @@ if __name__ == "__main__":
         'l2': 0.0005,
 
         # SDNE
-        'sdne_shuffle': True,
+        'sdne_shuffle': False,
         'sdne_load_model': False,
         'sdne_resume_training': False,
         'sdne_activation': 'relu',
@@ -140,9 +140,10 @@ if __name__ == "__main__":
                 df.append([emb_dim, alpha, beta, mAP])
 
     df = pd.DataFrame(data=df, columns=['emb_dim', 'alpha', 'beta', 'mAP'])
-    print(df)
+    print(df.sort_values(by=['mAP'], ascending=False))
 
-    fig_dims = (10, 60)
+    # sns.set(style="whitegrid")
+    fig_dims = (10, 65)
     fig, axs = plt.subplots(nrows=6, figsize=fig_dims)
     sns.lineplot(x='emb_dim', y='mAP', hue='alpha', data=df, ax=axs[0], marker="o")
     sns.lineplot(x='emb_dim', y='mAP', hue='beta', data=df, ax=axs[1], marker="o")
