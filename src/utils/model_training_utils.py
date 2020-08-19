@@ -96,10 +96,10 @@ def dyngem_alg(graphs, params: SettingParam):
         dy_ge.load_models(folder_path=params.dyge_weight_folder)
         if params.specific_dyge_model_index is not None:
             train_model_at_index(dy_ge, params)
-            dy_ge.save_embeddings(folder_path=params.dyge_emb_folder)
     else:
         train_model(dy_ge, params=params)
-        dy_ge.save_embeddings(folder_path=params.dyge_emb_folder)
+
+    dy_ge.save_embeddings(folder_path=params.dyge_emb_folder)
 
     if params.show_loss:
         check_current_loss_model(graphs, dy_ge, weight_model_folder=params.dyge_weight_folder)
@@ -165,7 +165,6 @@ def sdne_alg(graphs, params: SettingParam, index=None):
 
             if params.sdne_resume_training:
                 _sdne_train()
-                ge.save_embedding(filepath=join(params.sdne_emb_folder, f"_{i}"))
         else:
             hidden_dims = get_hidden_layer(
                 prop_size=params.prop_size,
@@ -176,7 +175,8 @@ def sdne_alg(graphs, params: SettingParam, index=None):
                            alpha=params.alpha,
                            beta=params.beta, activation=params.sdne_activation)
             _sdne_train()
-            ge.save_embedding(filepath=join(params.sdne_emb_folder, f"_{i}"))
+
+        ge.save_embedding(filepath=join(params.sdne_emb_folder, f"_{i}"))
         save_custom_model(model=ge.get_model(), filepath=sdne_model_path)
 
         dy_embeddings.append(ge.get_embedding())

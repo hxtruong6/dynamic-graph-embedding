@@ -155,7 +155,8 @@ class TStaticGE(object):
             torch.cuda.empty_cache()
 
         if plot_loss:
-            plot_losses(losses=train_losses, x_label="epoch", y_label="loss")
+            plot_losses(losses=train_losses, x_label="epoch", y_label="loss",
+                        title=f"emb_dim={self.embedding_dim}|lr={learning_rate}|alpha={self.alpha}|beta={self.beta}")
 
     def get_embedding(self, x=None):
         '''
