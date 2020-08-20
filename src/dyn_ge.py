@@ -7,7 +7,7 @@ from time import time
 import networkx as nx
 
 from src.static_ge import TStaticGE
-from src.utils.autoencoder import TAutoencoder
+from src.utils.autoencoder import Autoencoder
 from src.utils.checkpoint_config import CheckpointConfig
 from src.utils.model_utils import get_hidden_layer, handle_expand_model, save_custom_model, load_custom_model
 
@@ -65,7 +65,7 @@ class TDynGE(object):
             raise ValueError("index is out of range graphs")
 
         g: nx.Graph = self.graphs[index]
-        autoencoder: TAutoencoder = None
+        autoencoder: Autoencoder = None
         input_dim = g.number_of_nodes()
 
         if index == 0:
@@ -75,7 +75,7 @@ class TDynGE(object):
                 embedding_dim=self.embedding_dim
             )
 
-            autoencoder = TAutoencoder(
+            autoencoder = Autoencoder(
                 input_dim=input_dim,
                 embedding_dim=self.embedding_dim,
                 hidden_dims=hidden_dims,

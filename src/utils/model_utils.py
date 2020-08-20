@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from src.utils.autoencoder import TAutoencoder
+from src.utils.autoencoder import Autoencoder
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -22,7 +22,7 @@ def get_hidden_layer(prop_size, input_dim, embedding_dim):
     return hidden_dims
 
 
-def handle_expand_model(model: TAutoencoder, input_dim, net2net_applied=False, prop_size=0.3):
+def handle_expand_model(model: Autoencoder, input_dim, net2net_applied=False, prop_size=0.3):
     if input_dim == model.get_input_dim():
         return model
 
@@ -52,7 +52,7 @@ def handle_expand_model(model: TAutoencoder, input_dim, net2net_applied=False, p
     return model
 
 
-def save_custom_model(model: TAutoencoder, filepath, checkpoint=None, compress=True):
+def save_custom_model(model: Autoencoder, filepath, checkpoint=None, compress=True):
     # if checkpoint is not None:
     #     if folder_path[-1] == '/':
     #         folder_path = folder_path[:-1]
@@ -86,7 +86,7 @@ def load_custom_model(filepath):
     with open(config_path) as fo:
         config_layer = json.load(fo)
 
-    model = TAutoencoder(
+    model = Autoencoder(
         input_dim=config_layer['input_dim'],
         embedding_dim=config_layer['embedding_dim'],
         hidden_dims=config_layer['hidden_dims'],

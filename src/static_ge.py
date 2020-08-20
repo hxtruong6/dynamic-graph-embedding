@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 
 from src.data_preprocessing.graph_dataset import GraphDataset
 from src.data_preprocessing.graph_preprocessing import next_datasets, get_graph_from_file, handle_graph_mini_batch
-from src.utils.autoencoder import TAutoencoder
+from src.utils.autoencoder import Autoencoder
 from src.utils.checkpoint_config import CheckpointConfig
 from src.utils.graph_util import draw_graph, print_graph_stats
 from src.utils.link_pred_precision_k import check_link_predictionK
@@ -23,7 +23,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class TStaticGE(object):
-    def __init__(self, G: nx.Graph, embedding_dim=None, hidden_dims=None, model: TAutoencoder = None,
+    def __init__(self, G: nx.Graph, embedding_dim=None, hidden_dims=None, model: Autoencoder = None,
                  alpha=0.2, beta=8, l1=0., l2=1e-5, activation='relu'):
         super(TStaticGE, self).__init__()
         if hidden_dims is None:
@@ -39,7 +39,7 @@ class TStaticGE(object):
             self.input_dim = self.G.number_of_nodes()
             self.l1 = l1
             self.l2 = l2
-            self.model = TAutoencoder(
+            self.model = Autoencoder(
                 input_dim=self.input_dim,
                 embedding_dim=self.embedding_dim,
                 hidden_dims=self.hidden_dims,

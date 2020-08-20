@@ -4,80 +4,103 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
 
-class TPartCoder(nn.Module):
-    def __init__(self, input_dim, output_dim=2, hidden_dims=None, activation='relu', is_encoder=True):
-        '''
+#
+# class TPartCoder(nn.Module):
+#     def __init__(self, input_dim, output_dim=2, hidden_dims=None, activation='relu', is_encoder=True):
+#         '''
+#
+#         :param input_dim:
+#         :param output_dim:
+#         :param hidden_dims:
+#         :param activation: 'tanh' | 'sigmoid' | 'relu' | 'leaky_relu'
+#         '''
+#         super(TPartCoder, self).__init__()
+#         if activation == 'tanh':
+#             self.activation = nn.Tanh()
+#         elif activation == 'sigmoid':
+#             self.activation = nn.Sigmoid()
+#         elif activation == 'relu':
+#             self.activation = nn.ReLU()
+#         elif activation == 'leaky_relu':
+#             self.activation = nn.LeakyReLU()
+#         else:
+#             raise NotImplementedError
+#         self.is_encoder = is_encoder
+#         self.layers = nn.ModuleList()
+#         for i in range(len(hidden_dims) + 1):
+#             if i == 0:
+#                 layer = nn.Linear(in_features=input_dim, out_features=hidden_dims[i])
+#             elif i == len(hidden_dims):
+#                 layer = nn.Linear(in_features=hidden_dims[i - 1], out_features=output_dim)
+#             else:
+#                 layer = nn.Linear(in_features=hidden_dims[i - 1], out_features=hidden_dims[i])
+#
+#             self.layers.append(layer)
+#
+#     def forward(self, x):
+#         x = self.layers[0](x)
+#         for i in range(1, len(self.layers)):
+#             x = nn.ReLU()(x)
+#             x = self.layers[i](x)
+#
+#         if not self.is_encoder:
+#             x = self.activation(x)
+#         else:
+#             x = nn.Tanh()(x)
+#
+#         return x
+#
+#     def get_hidden_dims(self):
+#         hidden_dims = []
+#         for layer in self.layers:
+#             if type(layer) == nn.Linear:
+#                 hidden_dims.append(layer.in_features)
+#         return hidden_dims[1:]
+#
+#     def info(self, show_weights=False):
+#         print(f"Number of layers: {len(self.layers)}")
+#         for i, layer in enumerate(self.layers):
+#             if isinstance(layer, nn.Linear):
+#                 print(f"Layer {i + 1} \t Shape =({layer.in_features},{layer.out_features})")
+#                 if show_weights:
+#                     print(f"\tWeight= {layer.weight.data} \n\tBias= {layer.bias.data}")
+#
+#     def insert_first_layer(self, layer_dim):
+#         out_feature = self.layers[0].in_features
+#         layer = nn.Linear(in_features=layer_dim, out_features=out_feature).apply(weights_init)
+#         self.layers.insert(0, layer)
+#
+#     def insert_last_layer(self, layer_dim):
+#         in_feature = self.layers[-1].out_features
+#         layer = nn.Linear(in_features=in_feature, out_features=layer_dim).apply(weights_init)
+#         self.layers.append(layer)
+#
 
-        :param input_dim:
-        :param output_dim:
-        :param hidden_dims:
-        :param activation: 'tanh' | 'sigmoid' | 'relu' | 'leaky_relu'
-        '''
-        super(TPartCoder, self).__init__()
-        if activation == 'tanh':
-            self.activation = nn.Tanh()
-        elif activation == 'sigmoid':
-            self.activation = nn.Sigmoid()
-        elif activation == 'relu':
-            self.activation = nn.ReLU()
-        elif activation == 'leaky_relu':
-            self.activation = nn.LeakyReLU()
-        else:
-            raise NotImplementedError
-        self.is_encoder = is_encoder
-        self.layers = nn.ModuleList()
-        for i in range(len(hidden_dims) + 1):
-            if i == 0:
-                layer = nn.Linear(in_features=input_dim, out_features=hidden_dims[i])
-            elif i == len(hidden_dims):
-                layer = nn.Linear(in_features=hidden_dims[i - 1], out_features=output_dim)
-            else:
-                layer = nn.Linear(in_features=hidden_dims[i - 1], out_features=hidden_dims[i])
-
-            self.layers.append(layer)
-
-    def forward(self, x):
-        x = self.layers[0](x)
-        for i in range(1, len(self.layers)):
-            x = nn.ReLU()(x)
-            x = self.layers[i](x)
-
-        if not self.is_encoder:
-            x = self.activation(x)
-        else:
-            x = nn.Tanh()(x)
-
-        return x
-
-    def get_hidden_dims(self):
-        hidden_dims = []
-        for layer in self.layers:
-            if type(layer) == nn.Linear:
-                hidden_dims.append(layer.in_features)
-        return hidden_dims[1:]
-
-    def info(self, show_weights=False):
-        print(f"Number of layers: {len(self.layers)}")
-        for i, layer in enumerate(self.layers):
-            if isinstance(layer, nn.Linear):
-                print(f"Layer {i + 1} \t Shape =({layer.in_features},{layer.out_features})")
-                if show_weights:
-                    print(f"\tWeight= {layer.weight.data} \n\tBias= {layer.bias.data}")
-
-    def insert_first_layer(self, layer_dim):
-        out_feature = self.layers[0].in_features
-        layer = nn.Linear(in_features=layer_dim, out_features=out_feature).apply(weights_init)
-        self.layers.insert(0, layer)
-
-    def insert_last_layer(self, layer_dim):
-        in_feature = self.layers[-1].out_features
-        layer = nn.Linear(in_features=in_feature, out_features=layer_dim).apply(weights_init)
-        self.layers.append(layer)
+def _get_activation(act):
+    act = str.lower(act)
+    if act == 'relu':
+        return nn.ReLU()
+    elif act == 'leaky_relu':
+        return nn.LeakyReLU()
+    elif act == 'sigmoid':
+        return nn.Sigmoid()
+    elif act == 'tanh':
+        return nn.Tanh()
+    else:
+        raise ValueError(f"Invalid activation name: {act}")
 
 
-class TAutoencoder(nn.Module):
-    def __init__(self, input_dim=None, embedding_dim=None, hidden_dims=None, l1=0.01, l2=1e-5, activation='relu'):
-        super(TAutoencoder, self).__init__()
+class ModelActivation:
+    def __init__(self, hidden_layer_act='leaky_relu', embedding_act='tanh', output_act='relu'):
+        self.hidden_layer_act = _get_activation(hidden_layer_act)
+        self.embedding_act = _get_activation(embedding_act)
+        self.output_act = _get_activation(output_act)
+
+
+class Autoencoder(nn.Module):
+    def __init__(self, input_dim=None, embedding_dim=None, hidden_dims=None, l1=0.01, l2=1e-5,
+                 activation=ModelActivation()):
+        super(Autoencoder, self).__init__()
         if input_dim is None or embedding_dim is None:
             return
         self.input_dim = input_dim
@@ -88,25 +111,46 @@ class TAutoencoder(nn.Module):
         self.activation = activation
 
         # ======== Create layers
-        self.encoder = TPartCoder(input_dim=input_dim, output_dim=embedding_dim, hidden_dims=hidden_dims,
-                                  activation=activation, is_encoder=True)
-        self.encoder.apply(weights_init)
+        layers = [nn.Module()] * (len(hidden_dims) * 2 + 2)
+        for i in range(len(hidden_dims) + 1):
+            if i == 0:
+                layers[0] = nn.Linear(in_features=input_dim, out_features=hidden_dims[i])
+                layers[-1] = nn.Linear(in_features=hidden_dims[i], out_features=input_dim)
+            elif i == len(hidden_dims):
+                layers[i] = nn.Linear(in_features=hidden_dims[-1], out_features=embedding_dim)
+                layers[i + 1] = nn.Linear(in_features=embedding_dim, out_features=hidden_dims[-1])
+            else:
+                layers[i] = nn.Linear(in_features=hidden_dims[i - 1], out_features=hidden_dims[i])
+                layers[-i - 1] = nn.Linear(in_features=hidden_dims[i], out_features=hidden_dims[i - 1])
 
-        self.decoder = TPartCoder(input_dim=embedding_dim, output_dim=input_dim, hidden_dims=hidden_dims[::-1],
-                                  activation=activation, is_encoder=False)
-        self.decoder.apply(weights_init)
+        self.layers = nn.ModuleList(layers).apply(weights_init)
+
+    def _encoder(self, x):
+        for i in range(len(self.layers) // 2):
+            x = self.layers[i](x)
+            x = self.activation.hidden_layer_act(x)
+        x = self.activation.embedding_act(x)
+        return x
+
+    def _decoder(self, x):
+        for i in range(len(self.layers) // 2, len(self.layers)):
+            x = self.layers[i](x)
+            x = self.activation.hidden_layer_act(x)
+        x = self.activation.output_act(x)
+        return x
 
     def forward(self, x):
-        y = self.encoder(x)
-        return self.decoder(y), y
+        y = self._encoder(x)
+        x_hat = self._decoder(y)
+        return x_hat, y
 
     def get_embedding(self, x):
-        embedding = self.encoder(x)
+        embedding = self._encoder(x)
         embedding = embedding.clone().detach().cpu()
         return embedding.detach().numpy()
 
     def get_reconstruction(self, x):
-        reconstruction = self.decoder(self.encoder(x))
+        reconstruction = self._decoder(self._encoder(x))
         reconstruction = reconstruction.clone().detach().cpu()
         return reconstruction.detach().numpy()
 
@@ -117,18 +161,21 @@ class TAutoencoder(nn.Module):
         :param half_model:
         :return:
         '''
-        hidden_dims = self.encoder.get_hidden_dims()
+        hidden_dims = []
+        for i in range(1, len(self.layers) // 2):
+            hidden_dims.append(self.layers[i].in_features)
         return hidden_dims
 
-    def info(self, show_weights=False):
-        self.encoder.info(show_weights=show_weights)
-        self.decoder.info(show_weights=show_weights)
+    # def info(self, show_weights=False):
+    #     # self.encoder.info(show_weights=show_weights)
+    #     # self.decoder.info(show_weights=show_weights)
+    #     print(f"Number of layer: {len(self.layers)}")
 
     def expand_first_layer(self, layer_dim):
         self.input_dim = layer_dim
-        self.encoder.insert_first_layer(layer_dim=layer_dim)
-        self.decoder.insert_last_layer(layer_dim=layer_dim)
-        self.hidden_dims = self.get_hidden_dims()
+        prev_layer_dim = self.layers[0].in_features
+        self.layers.insert(0, nn.Linear(in_features=layer_dim, out_features=prev_layer_dim))
+        self.layers.append(nn.Linear(in_features=prev_layer_dim, out_features=layer_dim))
 
     def get_input_dim(self):
         return self.input_dim
@@ -140,7 +187,7 @@ class TAutoencoder(nn.Module):
         config_layer = {
             "input_dim": self.input_dim,
             "embedding_dim": self.embedding_dim,
-            "hidden_dims": self.hidden_dims,
+            "hidden_dims": self.get_hidden_dims(),
             "l1": self.l1,
             "l2": self.l2,
             "activation": self.activation
@@ -159,7 +206,7 @@ if __name__ == "__main__":
     torch.manual_seed(6)
 
     num_epochs = 1000
-    dataset = torch.randn(3, 3).uniform_(0, 1)
+    dataset = torch.randn(2, 20).uniform_(0, 1)
     dataset[dataset > 0.5] = 1.
     dataset[dataset <= 0.5] = 0.
     # print(dataset)
@@ -171,35 +218,42 @@ if __name__ == "__main__":
 
     #  create dataset
 
-    ae = TAutoencoder(input_dim=3, embedding_dim=2, hidden_dims=[4], activation='sigmoid').to(device)
+    ae = Autoencoder(input_dim=20, embedding_dim=4, hidden_dims=[16, 10, 8], activation=ModelActivation()).to(device)
 
-    optimizer = torch.optim.Adam(ae.parameters(), lr=1e-3, weight_decay=1e-5)
-
-    # mean-squared error loss
-    criterion = nn.MSELoss()
-
-    for epoch in range(num_epochs):
-        for data in dataloader:
-            inp = data
-            # print("inp: ", inp)
-            inp = Variable(inp).to(device)
-            # ===================forward=====================
-            output, embed_out = ae(inp)
-            loss = criterion(output, inp)
-            # ===================backward====================
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-        # ===================log========================
-        print('epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, num_epochs, loss))
-
-    # print(ae.get_hidden_dims())
-    # ae.info(show_weights=True)
-
-    print("Original: ", dataset)
-    output, e = ae(torch.tensor(dataset).to(device))
-    print("Embdding: ", e.cpu().data)
-    print("Reconstruction: ", output.cpu().data)
+    print(ae)
+    print(ae.get_hidden_dims())
+    ae.expand_first_layer(30)
+    ae.expand_first_layer(40)
+    print(ae)
+    print(ae.get_hidden_dims())
+    #
+    # optimizer = torch.optim.Adam(ae.parameters(), lr=1e-3, weight_decay=1e-5)
+    #
+    # # mean-squared error loss
+    # criterion = nn.MSELoss()
+    #
+    # for epoch in range(num_epochs):
+    #     for data in dataloader:
+    #         inp = data
+    #         # print("inp: ", inp)
+    #         inp = Variable(inp).to(device)
+    #         # ===================forward=====================
+    #         output, embed_out = ae(inp)
+    #         loss = criterion(output, inp)
+    #         # ===================backward====================
+    #         optimizer.zero_grad()
+    #         loss.backward()
+    #         optimizer.step()
+    #     # ===================log========================
+    #     # print('epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, num_epochs, loss))
+    #
+    # # print(ae.get_hidden_dims())
+    # # ae.info(show_weights=True)
+    #
+    # print("Original: ", dataset)
+    # output, e = ae(torch.tensor(dataset).clone().detach().to(device))
+    # print("Embdding: ", e.cpu().data)
+    # print("Reconstruction: ", output.cpu().data)
 
     # print("\nExpand autoencoder")
     # ae.expand_first_layer(layer_dim=6)
