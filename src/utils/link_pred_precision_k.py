@@ -8,7 +8,6 @@ def get_similarity(result):
 
 def check_reconstruction(embedding, graph: nx.Graph, k_query):
     def get_precisionK(max_index):
-        print("Get Precision@K...")
         similarity = get_similarity(embedding).reshape(-1)
         sortedInd = np.argsort(similarity)[::-1]
         K = 0
@@ -18,7 +17,6 @@ def check_reconstruction(embedding, graph: nx.Graph, k_query):
         for ind in sortedInd:
             u = ind // node_size
             v = ind % node_size
-            print(f"{u} - {v}| Link: {graph.has_edge(u, v)} | Similarity: {similarity[u][v]}")
             if u == v:
                 continue
             if graph.has_edge(u, v):
@@ -33,14 +31,13 @@ def check_reconstruction(embedding, graph: nx.Graph, k_query):
     precisionK_list = get_precisionK(np.max(k_query))
     k_query_res = []
     for k in k_query:
-        print(f"Precison@K({k})={precisionK_list[k - 1]}")
+        print(f"Reconstruction Precison@K({k})={precisionK_list[k - 1]}")
         k_query_res.append(precisionK_list[k - 1])
     return k_query_res
 
 
 def check_link_predictionK(embedding, train_graph: nx.Graph, origin_graph: nx.Graph, k_query):
     def get_precisionK(max_index):
-        print("\nGet Precision@K ...")
         similarity = get_similarity(embedding).reshape(-1)
         sortedInd = np.argsort(similarity)[::-1]
         true_pred_count = 0
@@ -78,6 +75,6 @@ def check_link_predictionK(embedding, train_graph: nx.Graph, origin_graph: nx.Gr
     precisionK_list, AP = get_precisionK(np.max(k_query))
     k_query_res = []
     for k in k_query:
-        print(f"Precison@{k}={precisionK_list[k - 1]}")
+        print(f"Link prediction Precison@{k}={precisionK_list[k - 1]}")
         k_query_res.append(precisionK_list[k - 1])
     return k_query_res, AP

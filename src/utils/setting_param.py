@@ -1,3 +1,6 @@
+import torch.nn as nn
+
+
 class SettingParam(object):
 
     def __init__(self, **kwargs):
@@ -72,18 +75,34 @@ class SettingParam(object):
         print("==========\n")
 
 
-#
-# class DyGeParam(object):
-#     def __init__(self, **kwargs):
-#         self.global_seed = None
-#         self.size = None
-#         self.embedding_dim = None
-#         self.l1 = None
-#         self.l2 = None
-#         self.alpha = None
-#
-#         for key in kwargs:
-#             self.__setattr__(key, kwargs[key])
+def _get_activation(act):
+    act = str.lower(act)
+    if act == 'relu':
+        return nn.ReLU()
+    elif act == 'leaky_relu':
+        return nn.LeakyReLU()
+    elif act == 'sigmoid':
+        return nn.Sigmoid()
+    elif act == 'tanh':
+        return nn.Tanh()
+    else:
+        raise ValueError(f"Invalid activation name: {act}")
+
+
+class ModelActivation:
+    def __init__(self, hidden_layer_act='leaky_relu', embedding_act='tanh', output_act='relu'):
+        self.hidden_layer_act = _get_activation(hidden_layer_act)
+        self.embedding_act = _get_activation(embedding_act)
+        self.output_act = _get_activation(output_act)
+        self.data = {
+            'hidden': hidden_layer_act,
+            'embedding': embedding_act,
+            'output': output_act
+        }
+
+    def config(self):
+        return self.data
+
 
 class Dotdict(dict):
     """dot.notation access to dictionary attributes"""

@@ -1,100 +1,8 @@
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
-
-#
-# class TPartCoder(nn.Module):
-#     def __init__(self, input_dim, output_dim=2, hidden_dims=None, activation='relu', is_encoder=True):
-#         '''
-#
-#         :param input_dim:
-#         :param output_dim:
-#         :param hidden_dims:
-#         :param activation: 'tanh' | 'sigmoid' | 'relu' | 'leaky_relu'
-#         '''
-#         super(TPartCoder, self).__init__()
-#         if activation == 'tanh':
-#             self.activation = nn.Tanh()
-#         elif activation == 'sigmoid':
-#             self.activation = nn.Sigmoid()
-#         elif activation == 'relu':
-#             self.activation = nn.ReLU()
-#         elif activation == 'leaky_relu':
-#             self.activation = nn.LeakyReLU()
-#         else:
-#             raise NotImplementedError
-#         self.is_encoder = is_encoder
-#         self.layers = nn.ModuleList()
-#         for i in range(len(hidden_dims) + 1):
-#             if i == 0:
-#                 layer = nn.Linear(in_features=input_dim, out_features=hidden_dims[i])
-#             elif i == len(hidden_dims):
-#                 layer = nn.Linear(in_features=hidden_dims[i - 1], out_features=output_dim)
-#             else:
-#                 layer = nn.Linear(in_features=hidden_dims[i - 1], out_features=hidden_dims[i])
-#
-#             self.layers.append(layer)
-#
-#     def forward(self, x):
-#         x = self.layers[0](x)
-#         for i in range(1, len(self.layers)):
-#             x = nn.ReLU()(x)
-#             x = self.layers[i](x)
-#
-#         if not self.is_encoder:
-#             x = self.activation(x)
-#         else:
-#             x = nn.Tanh()(x)
-#
-#         return x
-#
-#     def get_hidden_dims(self):
-#         hidden_dims = []
-#         for layer in self.layers:
-#             if type(layer) == nn.Linear:
-#                 hidden_dims.append(layer.in_features)
-#         return hidden_dims[1:]
-#
-#     def info(self, show_weights=False):
-#         print(f"Number of layers: {len(self.layers)}")
-#         for i, layer in enumerate(self.layers):
-#             if isinstance(layer, nn.Linear):
-#                 print(f"Layer {i + 1} \t Shape =({layer.in_features},{layer.out_features})")
-#                 if show_weights:
-#                     print(f"\tWeight= {layer.weight.data} \n\tBias= {layer.bias.data}")
-#
-#     def insert_first_layer(self, layer_dim):
-#         out_feature = self.layers[0].in_features
-#         layer = nn.Linear(in_features=layer_dim, out_features=out_feature).apply(weights_init)
-#         self.layers.insert(0, layer)
-#
-#     def insert_last_layer(self, layer_dim):
-#         in_feature = self.layers[-1].out_features
-#         layer = nn.Linear(in_features=in_feature, out_features=layer_dim).apply(weights_init)
-#         self.layers.append(layer)
-#
-
-def _get_activation(act):
-    act = str.lower(act)
-    if act == 'relu':
-        return nn.ReLU()
-    elif act == 'leaky_relu':
-        return nn.LeakyReLU()
-    elif act == 'sigmoid':
-        return nn.Sigmoid()
-    elif act == 'tanh':
-        return nn.Tanh()
-    else:
-        raise ValueError(f"Invalid activation name: {act}")
-
-
-class ModelActivation:
-    def __init__(self, hidden_layer_act='leaky_relu', embedding_act='tanh', output_act='relu'):
-        self.hidden_layer_act = _get_activation(hidden_layer_act)
-        self.embedding_act = _get_activation(embedding_act)
-        self.output_act = _get_activation(output_act)
+from src.utils.setting_param import ModelActivation
 
 
 class Autoencoder(nn.Module):
@@ -108,7 +16,12 @@ class Autoencoder(nn.Module):
         self.hidden_dims = hidden_dims
         self.l1 = l1
         self.l2 = l2
-        self.activation = activation
+
+        if activation is dict():
+            self.activation = ModelActivation(hidden_layer_act=activation['hidden'],
+                                              embedding_act=activation['embedding'], output_act=activation['output'])
+        else:
+            self.activation = activation
 
         # ======== Create layers
         layers = [nn.Module()] * (len(hidden_dims) * 2 + 2)
@@ -166,11 +79,6 @@ class Autoencoder(nn.Module):
             hidden_dims.append(self.layers[i].in_features)
         return hidden_dims
 
-    # def info(self, show_weights=False):
-    #     # self.encoder.info(show_weights=show_weights)
-    #     # self.decoder.info(show_weights=show_weights)
-    #     print(f"Number of layer: {len(self.layers)}")
-
     def expand_first_layer(self, layer_dim):
         self.input_dim = layer_dim
         prev_layer_dim = self.layers[0].in_features
@@ -190,7 +98,7 @@ class Autoencoder(nn.Module):
             "hidden_dims": self.get_hidden_dims(),
             "l1": self.l1,
             "l2": self.l2,
-            "activation": self.activation
+            "activation": self.activation.config()
         }
         return config_layer
 

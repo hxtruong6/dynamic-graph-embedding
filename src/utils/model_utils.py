@@ -53,20 +53,6 @@ def handle_expand_model(model: Autoencoder, input_dim, net2net_applied=False, pr
 
 
 def save_custom_model(model: Autoencoder, filepath, checkpoint=None, compress=True):
-    # if checkpoint is not None:
-    #     if folder_path[-1] == '/':
-    #         folder_path = folder_path[:-1]
-    #
-    #     r_pos = folder_path.rfind('/')
-    #     begin_folder_path = folder_path[:r_pos] + "__ck_" + str(checkpoint)
-    #     if not exists(begin_folder_path):
-    #         os.makedirs(begin_folder_path)
-    #
-    #     folder_path = begin_folder_path + folder_path[r_pos:]
-    #
-    # if not exists(folder_fpath):
-    #     os.makedirs(folder_path)
-
     folder_path = filepath[:filepath.rfind('/')]
     if not exists(folder_path):
         os.makedirs(folder_path)
