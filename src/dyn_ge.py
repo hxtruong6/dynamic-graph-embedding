@@ -38,7 +38,7 @@ class TDynGE(object):
 
     def _train_model(self, dy_ge_idx, filepath, batch_size, epochs,
                      skip_print, learning_rate, early_stop,
-                     plot_loss=False, ck_config: CheckpointConfig = None, shuffle=False):
+                     plot_loss=True, ck_config: CheckpointConfig = None, shuffle=False):
         ge: TStaticGE = self.static_ges[dy_ge_idx]
 
         start_time = time()
@@ -93,7 +93,7 @@ class TDynGE(object):
 
     def train(self, folder_path, prop_size=0.3, batch_size=64, epochs=100, skip_print=5,
               net2net_applied=False, learning_rate=1e-6, ck_config: CheckpointConfig = None,
-              early_stop=50, plot_loss=False, shuffle=False):
+              early_stop=50, plot_loss=True, shuffle=False):
         '''
 
         :param folder_path:
@@ -127,7 +127,7 @@ class TDynGE(object):
 
     def train_at(self, model_index, folder_path, prop_size=0.4, batch_size=64, epochs=100, skip_print=5,
                  net2net_applied=False, learning_rate=0.001, ck_config: CheckpointConfig = None,
-                 early_stop=50, plot_loss=False, is_load_from_previous_model=False, shuffle=False, call_in_class=False):
+                 early_stop=50, plot_loss=True, is_load_from_previous_model=False, shuffle=False, call_in_class=False):
         '''
         To training a specific model.
         :param call_in_class:

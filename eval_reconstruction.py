@@ -3,12 +3,9 @@ import warnings
 import networkx as nx
 
 from src.data_preprocessing.graph_preprocessing import read_dynamic_graph
-from src.utils.config_file import read_config_file
-from src.utils.data_utils import load_single_processed_data, load_dy_embeddings, load_node2vec_embeddings
-from src.utils.evaluate import reconstruction_error
+from src.utils.data_utils import load_dy_embeddings, load_node2vec_embeddings
 from src.utils.graph_util import print_graph_stats
-from src.utils.link_pred_precision_k import check_link_predictionK, reconstruction_precision_k
-from src.utils.model_training_utils import link_pred_eva
+from src.utils.link_pred_precision_k import reconstruction_precision_k
 from src.utils.setting_param import SettingParam
 from src.utils.stable_evaluate import stability_constant
 
@@ -32,7 +29,7 @@ if __name__ == "__main__":
     params = SettingParam(**params)
     # params = read_config_file(filepath="./stability_configuration.ini", config_task="stability")
     is_reconstruction_mAP = True
-    k_query = [100, 200, 500, 1000, 2000, 4000, 6000, 10000]
+    k_query = [100, 200, 500, 1000, 2000, 4000, 6000, 8000, 10000]
     # ==================== Data =========================
     graphs, idx2node = read_dynamic_graph(
         folder_path=params.dataset_folder,
@@ -51,7 +48,6 @@ if __name__ == "__main__":
         print("=============== DynGEM ============")
         # -------- Training ----------
         dy_embeddings = load_dy_embeddings(params.dyge_emb_folder)
-        print(f"Stability constant= {stability_constant(graphs=graphs, embeddings=dy_embeddings)}")
         if is_reconstruction_mAP:
             for i, g in enumerate(graphs):
                 reconstruction_prec = reconstruction_precision_k(embedding=dy_embeddings[i], graph=g, k_query=k_query)
@@ -61,7 +57,6 @@ if __name__ == "__main__":
     if params.is_node2vec:
         print("=============== Node2vec ============")
         dy_embeddings = load_node2vec_embeddings(graphs, folder_path=params.node2vec_emb_folder)
-        print(f"Stability constant= {stability_constant(graphs=graphs, embeddings=dy_embeddings)}")
         if is_reconstruction_mAP:
             for i, g in enumerate(graphs):
                 reconstruction_prec = reconstruction_precision_k(embedding=dy_embeddings[i], graph=g, k_query=k_query)
@@ -71,7 +66,6 @@ if __name__ == "__main__":
     if params.is_sdne:
         print("=============== SDNE ============")
         dy_embeddings = load_dy_embeddings(folder_path=params.sdne_emb_folder)
-        print(f"Stability constant= {stability_constant(graphs=graphs, embeddings=dy_embeddings)}")
         if is_reconstruction_mAP:
             for i, g in enumerate(graphs):
                 reconstruction_prec = reconstruction_precision_k(embedding=dy_embeddings[i], graph=g, k_query=k_query)
