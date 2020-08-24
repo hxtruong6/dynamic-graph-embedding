@@ -36,6 +36,10 @@ class TDynGE(object):
             raise ValueError("index is invalid!")
         return self.static_ges[index].get_embedding()
 
+    def get_all_reconstructions(self):
+        ge: TStaticGE
+        return [ge.get_reconstruction() for ge in self.static_ges]
+
     def _train_model(self, dy_ge_idx, filepath, batch_size, epochs,
                      skip_print, learning_rate, early_stop,
                      plot_loss=True, ck_config: CheckpointConfig = None, shuffle=False):

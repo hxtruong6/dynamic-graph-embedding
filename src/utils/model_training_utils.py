@@ -9,6 +9,7 @@ import networkx as nx
 
 from src.static_ge import TStaticGE
 from src.utils.checkpoint_config import CheckpointConfig
+from src.utils.evaluate import reconstruction_accuracy
 from src.utils.model_utils import get_hidden_layer, load_custom_model, save_custom_model
 from src.utils.precision_k_evaluate import reconstruction_precision_k
 from src.utils.setting_param import SettingParam
@@ -168,6 +169,8 @@ def sdne_alg(graphs, params: SettingParam, index=None):
 
             if params.sdne_resume_training:
                 _sdne_train()
+
+            reconstruction_accuracy(reconstruction=ge.get_reconstruction(), graph=g)
         else:
             hidden_dims = get_hidden_layer(
                 prop_size=params.prop_size,

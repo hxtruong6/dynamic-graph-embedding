@@ -88,11 +88,35 @@ def cluster_evaluate(y_true, y_pred, alg=0):
           ', f1 {:.4f}'.format(f1))
 
 
-def reconstruction_error(reconstruction, graph: nx.Graph):
+def reconstruction_mse(reconstruction, graph: nx.Graph):
     X = np.array(nx.adjacency_matrix(graph).todense())
     X_hat = reconstruction
     err = np.sum(np.sqrt(np.square(X_hat - X)))
     return err
+
+
+def dy_reconstruction_accuracy(reconstructions, graphs):
+    accs = []
+    for i in range(len(graphs)):
+        acc = reconstruction_accuracy(reconstruction=reconstructions[i], graph=graphs[i])
+        accs.append(acc)
+    print("==>\tMean accuracy: ", np.mean(accs))
+
+
+def reconstruction_accuracy(reconstruction, graph: nx.Graph):
+    print("\nReconstruction accuracy:")
+    max_acc = 0
+    thresholds = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    for threshold in thresholds[:1]:
+        g = np.zeros_like(reconstruction)
+        g[reconstruction >= threshold] = 1.0
+        pred_count = 0
+        for u, v in graph.edges():
+            if g[u][v] == 1.0:
+                pred_count += 1
+        print(f"With threshold {threshold}: {pred_count / graph.number_of_edges()}")
+        max_acc = max(max_acc, pred_count / graph.number_of_edges())
+    return max_acc
 
 
 if __name__ == "__main__":

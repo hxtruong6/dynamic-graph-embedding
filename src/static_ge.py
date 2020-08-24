@@ -13,7 +13,7 @@ from src.data_preprocessing.graph_dataset import GraphDataset
 from src.data_preprocessing.graph_preprocessing import next_datasets, get_graph_from_file, handle_graph_mini_batch
 from src.utils.autoencoder import TAutoencoder
 from src.utils.checkpoint_config import CheckpointConfig
-from src.utils.evaluate import reconstruction_error
+from src.utils.evaluate import reconstruction_mse, reconstruction_accuracy
 from src.utils.graph_util import draw_graph, print_graph_stats
 from src.utils.precision_k_evaluate import check_link_predictionK, reconstruction_precision_k
 from src.utils.link_prediction import preprocessing_graph_for_link_prediction, run_link_pred_evaluate
@@ -220,8 +220,8 @@ if __name__ == "__main__":
                    activation='relu')
     start_time = time()
     ck_point = CheckpointConfig(number_saved=2, folder_path="../data")
-    ge.train(batch_size=None, epochs=1000, skip_print=500,
-             learning_rate=5e-4, early_stop=200, threshold_loss=1e-4,
+    ge.train(batch_size=None, epochs=5000, skip_print=500,
+             learning_rate=5e-5, early_stop=100, threshold_loss=1e-4,
              plot_loss=True, shuffle=True, ck_config=ck_point
              )
 
@@ -233,8 +233,6 @@ if __name__ == "__main__":
     print(embedding[:3])
     print(nx.adjacency_matrix(G).todense()[:3])
     print(reconstructed_graph[:3])
-    link_pred_prec = check_link_predictionK(embedding, train_graph=hidden_G, origin_graph=G, k_query=[2, 10, 20])
-    print("Precision@K: ", link_pred_prec)
 
     run_link_pred_evaluate(
         graph_df=g_hidden_df,
@@ -242,7 +240,11 @@ if __name__ == "__main__":
         num_boost_round=20000
     )
 
-    print("reconstruction_error: ", reconstruction_error(reconstructed_graph, graph=hidden_G))
+    link_pred_prec = check_link_predictionK(embedding, train_graph=hidden_G, origin_graph=G, k_query=[2, 10, 20])
+    print("Link Pred Precision@K: ", link_pred_prec)
+
+    reconstruction_accuracy(reconstruction=reconstructed_graph, graph=hidden_G)
+    print("reconstruction_error: ", reconstruction_mse(reconstructed_graph, graph=hidden_G))
     reconstruction_prec = reconstruction_precision_k(embedding=embedding, graph=hidden_G, k_query=[2, 10, 20])
     print("Reconstruction Precision: ", reconstruction_prec)
     # print(reconstructed_graph)
@@ -254,7 +256,7 @@ if __name__ == "__main__":
     # save_custom_model(ge.get_model(), filepath="../models/email-eu/email-eu")
 
     # plot_embedding(embeddings=embeddings)
-    plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0.7)
+    plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0.5)
 
     # print("========= Node2vec ==========")
     # node2vec = Node2Vec(graph=hidden_G,
