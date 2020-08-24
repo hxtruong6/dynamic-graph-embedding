@@ -13,8 +13,9 @@ from src.data_preprocessing.graph_dataset import GraphDataset
 from src.data_preprocessing.graph_preprocessing import next_datasets, get_graph_from_file, handle_graph_mini_batch
 from src.utils.autoencoder import TAutoencoder
 from src.utils.checkpoint_config import CheckpointConfig
+from src.utils.evaluate import reconstruction_error
 from src.utils.graph_util import draw_graph, print_graph_stats
-from src.utils.link_pred_precision_k import check_link_predictionK
+from src.utils.link_pred_precision_k import check_link_predictionK, reconstruction_precision_k
 from src.utils.link_prediction import preprocessing_graph_for_link_prediction, run_link_pred_evaluate
 from src.utils.model_utils import save_custom_model
 from src.utils.visualize import plot_reconstruct_graph, plot_embeddings_with_labels, plot_losses
@@ -219,8 +220,8 @@ if __name__ == "__main__":
                    activation='relu')
     start_time = time()
     ck_point = CheckpointConfig(number_saved=2, folder_path="../data")
-    ge.train(batch_size=None, epochs=10000, skip_print=500,
-             learning_rate=5e-5, early_stop=200, threshold_loss=1e-4,
+    ge.train(batch_size=None, epochs=1000, skip_print=500,
+             learning_rate=5e-4, early_stop=200, threshold_loss=1e-4,
              plot_loss=True, shuffle=True, ck_config=ck_point
              )
 
@@ -240,6 +241,10 @@ if __name__ == "__main__":
         embeddings=embedding,
         num_boost_round=20000
     )
+
+    print("reconstruction_error: ", reconstruction_error(reconstructed_graph, graph=hidden_G))
+    reconstruction_prec = reconstruction_precision_k(embedding=embedding, graph=hidden_G, k_query=[2, 10, 20])
+    print("Reconstruction Precision: ", reconstruction_prec)
     # print(reconstructed_graph)
     # classify_embeddings_evaluate(embeddings, label_file="../data/email-eu/email-Eu-core-department-labels.txt")
     # plot_embeddings_with_labels(G, embeddings=embeddings,
@@ -249,7 +254,7 @@ if __name__ == "__main__":
     # save_custom_model(ge.get_model(), filepath="../models/email-eu/email-eu")
 
     # plot_embedding(embeddings=embeddings)
-    plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0.6)
+    plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0.7)
 
     # print("========= Node2vec ==========")
     # node2vec = Node2Vec(graph=hidden_G,
