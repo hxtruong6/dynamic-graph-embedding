@@ -5,7 +5,7 @@ import networkx as nx
 from src.data_preprocessing.graph_preprocessing import read_dynamic_graph
 from src.utils.data_utils import load_dy_embeddings, load_node2vec_embeddings
 from src.utils.graph_util import print_graph_stats
-from src.utils.link_pred_precision_k import reconstruction_precision_k
+from src.utils.precision_k_evaluate import reconstruction_precision_k
 from src.utils.setting_param import SettingParam
 from src.utils.stable_evaluate import stability_constant
 

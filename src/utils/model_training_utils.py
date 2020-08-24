@@ -10,6 +10,7 @@ import networkx as nx
 from src.static_ge import TStaticGE
 from src.utils.checkpoint_config import CheckpointConfig
 from src.utils.model_utils import get_hidden_layer, load_custom_model, save_custom_model
+from src.utils.precision_k_evaluate import reconstruction_precision_k
 from src.utils.setting_param import SettingParam
 
 warnings.filterwarnings("ignore")
@@ -96,6 +97,8 @@ def dyngem_alg(graphs, params: SettingParam):
         dy_ge.load_models(folder_path=params.dyge_weight_folder)
         if params.specific_dyge_model_index is not None:
             train_model_at_index(dy_ge, params)
+            print("AP: ", reconstruction_precision_k(graph=graphs[params.is_load_dyge_model],
+                                                     embedding=dy_ge.get_embedding(params.specific_dyge_model_index)))
     else:
         train_model(dy_ge, params=params)
 

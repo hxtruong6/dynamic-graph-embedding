@@ -10,7 +10,7 @@ from src.data_preprocessing.graph_preprocessing import read_dynamic_graph
 from src.static_ge import TStaticGE
 from src.utils.checkpoint_config import CheckpointConfig
 from src.utils.config_file import read_config_file
-from src.utils.link_pred_precision_k import check_link_predictionK
+from src.utils.precision_k_evaluate import check_link_predictionK
 from src.utils.model_training_utils import create_folder, dyngem_alg, link_pred_eva, node2vec_alg, sdne_alg
 from src.utils.data_utils import save_processed_data, load_single_processed_data
 from src.utils.graph_util import print_graph_stats

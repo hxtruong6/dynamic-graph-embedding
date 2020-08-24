@@ -15,7 +15,7 @@ from src.utils.autoencoder import TAutoencoder
 from src.utils.checkpoint_config import CheckpointConfig
 from src.utils.evaluate import reconstruction_error
 from src.utils.graph_util import draw_graph, print_graph_stats
-from src.utils.link_pred_precision_k import check_link_predictionK, reconstruction_precision_k
+from src.utils.precision_k_evaluate import check_link_predictionK, reconstruction_precision_k
 from src.utils.link_prediction import preprocessing_graph_for_link_prediction, run_link_pred_evaluate
 from src.utils.model_utils import save_custom_model
 from src.utils.visualize import plot_reconstruct_graph, plot_embeddings_with_labels, plot_losses
