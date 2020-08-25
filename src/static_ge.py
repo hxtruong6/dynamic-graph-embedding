@@ -94,7 +94,11 @@ class TStaticGE(object):
         graph_dataset = GraphDataset(A=self.A, L=self.L)
         if batch_size is None:
             batch_size = self.input_dim
-        dataloader = DataLoader(graph_dataset, batch_size=batch_size, shuffle=shuffle, pin_memory=True)
+
+        # Train whole dataset in one batch_size
+        ## dataloader = DataLoader(graph_dataset, batch_size=batch_size, shuffle=shuffle, pin_memory=True)
+        A = torch.tensor(self.A.todense())
+        L = torch.tensor(self.L.todense())
 
         self.model = self.model.to(device)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=self.l2)
@@ -103,38 +107,38 @@ class TStaticGE(object):
         count_epoch_no_improves = 0
         train_losses = []
         is_stop_train = False
+
+        x = Variable(A).to(device)
+        L = L.to(device)
         for epoch in range(epochs):
             # for data in dataloader:
             t1 = time()
             epoch_loss = 0
             if is_stop_train:
                 break
-            for step, batch_inp in enumerate(dataloader):
-                A, L = handle_graph_mini_batch(batch_inp)
+            # for step, batch_inp in enumerate(dataloader):
 
-                # Trick here. TODO: check why A is (1,batch_size,number_nodes)
-                # x = Variable(A[0]).to(device)
-                # L = L[0].to(device)
-                x = Variable(A).to(device)
-                L = L.to(device)
-                # ===================forward=====================
-                optimizer.zero_grad()
+            # A, L = handle_graph_mini_batch(batch_inp)
 
-                x_hat, y = self.model(x)
-                loss = self._compute_loss(x, x_hat, y, L)
-                epoch_loss += loss
+            # ===================forward=====================
+            optimizer.zero_grad()
 
-                if loss < 0:
-                    is_stop_train = True
-                    print("Stopping training due to negative loss.")
-                    break
+            x_hat, y = self.model(x)
+            loss = self._compute_loss(x, x_hat, y, L)
+            epoch_loss += loss
 
-                # ===================backward====================
-                loss.backward()
-                optimizer.step()
+            if loss < 0:
+                is_stop_train = True
+                print("Stopping training due to negative loss.")
+                break
 
-                del x, L
-                # ===================log========================
+            # ===================backward====================
+            loss.backward()
+            optimizer.step()
+
+            # del x
+            # del L
+            # ===================log========================
             train_losses.append(round(float(epoch_loss), 4))
             if (epoch + 1) % skip_print == 0 or epoch == epochs - 1 or epoch == 0:
                 print(
@@ -158,6 +162,8 @@ class TStaticGE(object):
         if plot_loss:
             plot_losses(losses=train_losses, x_label="epoch", y_label="loss",
                         title=f"emb_dim={self.embedding_dim}|lr={learning_rate}|alpha={self.alpha}|beta={self.beta}")
+
+        del A, L, x
 
     def get_embedding(self, x=None):
         '''

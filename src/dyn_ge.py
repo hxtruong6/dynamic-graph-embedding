@@ -234,7 +234,7 @@ if __name__ == "__main__":
 
     dy_ge = TDynGE(graphs=graphs, embedding_dim=2)
     # dy_ge.load_models(folder_path="../models/generate")
-    dy_ge.train(prop_size=0.3, epochs=1, skip_print=50, net2net_applied=True, learning_rate=0.003,
+    dy_ge.train(prop_size=0.3, epochs=50, skip_print=50, net2net_applied=True, learning_rate=0.003,
                 folder_path="../models/generate/", ck_config=ck_config,
                 early_stop=50, plot_loss=True)
 
