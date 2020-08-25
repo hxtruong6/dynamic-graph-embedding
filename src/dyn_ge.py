@@ -223,17 +223,18 @@ class TDynGE(object):
 
 if __name__ == "__main__":
     g1 = nx.gnm_random_graph(n=5, m=5, seed=6)
-    g2 = nx.gnm_random_graph(n=8, m=12, seed=6)
-    g3 = nx.gnm_random_graph(n=13, m=20, seed=6)
-    graphs = [g1, g2, g3]
+    g2 = nx.gnm_random_graph(n=12, m=20, seed=6)
+    g3 = nx.gnm_random_graph(n=30, m=80, seed=6)
+    g4 = nx.gnm_random_graph(n=300, m=800, seed=6)
+    graphs = [g1, g2, g3, g4]
 
     ck_config = CheckpointConfig(number_saved=10, folder_path="../models/generate_ck")
 
     # graphs, _ = read_dynamic_graph(folder_path="../data/cit_hepth", convert_to_idx=True, limit=1)
 
     dy_ge = TDynGE(graphs=graphs, embedding_dim=2)
-    dy_ge.load_models(folder_path="../models/generate")
-    dy_ge.train(prop_size=0.4, epochs=100, skip_print=20, net2net_applied=False, learning_rate=0.003,
+    # dy_ge.load_models(folder_path="../models/generate")
+    dy_ge.train(prop_size=0.3, epochs=1, skip_print=50, net2net_applied=True, learning_rate=0.003,
                 folder_path="../models/generate/", ck_config=ck_config,
                 early_stop=50, plot_loss=True)
 

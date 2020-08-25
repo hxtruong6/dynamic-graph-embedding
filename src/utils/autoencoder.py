@@ -71,6 +71,14 @@ class TPartCoder(nn.Module):
     def get_size(self):
         return len(self.layers)
 
+    def get_layer_dims(self):
+        dims = []
+        for i in range(len(self.layers)):
+            dims.append(self.layers[i].in_features)
+            if i == len(self.layers) - 1:
+                dims.append(self.layers[i].out_features)
+        return dims
+
     def insert_first_layer(self, layer_dim):
         out_feature = self.layers[0].in_features
         layer = nn.Linear(in_features=layer_dim, out_features=out_feature).apply(weights_init)
@@ -88,22 +96,27 @@ class TPartCoder(nn.Module):
 
         add_layer = nn.Linear(in_features=add_unit_size, out_features=layer.out_features).apply(weights_init)
         add_weight = add_layer.weight.detach().numpy()
+
         new_layer = nn.Linear(in_features=layer_dim, out_features=layer.out_features).apply(weights_init)
         new_layer.weight = torch.nn.Parameter(torch.Tensor(np.hstack((weight, add_weight))))
         self.layers[0] = new_layer
-        # print(self.layers[0].weight)
 
     def _expand_last(self, layer_dim):
         layer: nn.Linear = self.layers[-1]
-        weight = layer.weight.detach().numpy()
+        weight, bias = layer.weight.detach().numpy(), layer.bias.detach().numpy()
         add_unit_size = layer_dim - layer.out_features
 
         add_layer = nn.Linear(in_features=layer.in_features, out_features=add_unit_size).apply(weights_init)
         add_weight = add_layer.weight.detach().numpy()
+        add_bias = add_layer.bias.detach().numpy()
+
         new_layer = nn.Linear(in_features=layer.in_features, out_features=layer_dim).apply(weights_init)
-        new_layer.weight = torch.nn.Parameter(torch.Tensor(np.hstack((weight.T, add_weight.T))))
+        weight_new_layer = np.hstack((weight.T, add_weight.T)).T
+        bias_new_layer = np.hstack((bias, add_bias))
+
+        new_layer.weight = torch.nn.Parameter(torch.tensor(weight_new_layer, dtype=torch.float))
+        new_layer.bias = torch.nn.Parameter(torch.tensor(bias_new_layer, dtype=torch.float))
         self.layers[-1] = new_layer
-        # print(self.layers[-1].weight)
 
     def _deeper(self, pos_layer):
         layer: nn.Linear = self.layers[pos_layer]
@@ -193,8 +206,10 @@ class TAutoencoder(nn.Module):
         :param half_model:
         :return:
         '''
-        hidden_dims = self.encoder.get_hidden_dims()
-        return hidden_dims
+        return self.encoder.get_hidden_dims()
+
+    def get_layer_dims(self):
+        return self.encoder.get_layer_dims()
 
     def info(self, show_weights=False):
         self.encoder.info(show_weights=show_weights)
@@ -256,6 +271,11 @@ if __name__ == "__main__":
     dataset = torch.randn(1, 6).uniform_(0, 1)
     dataset[dataset > 0.5] = 1.
     dataset[dataset <= 0.5] = 0.
+
+    dataset_2 = torch.randn(1, 7).uniform_(0, 1)
+    dataset_2[dataset_2 > 0.5] = 1.
+    dataset_2[dataset_2 <= 0.5] = 0.
+
     # print(dataset)
     # print(torch.transpose(dataset, 0, 1))
     # dataset = (dataset + torch.transpose(dataset, 0, 1)) / 2
@@ -267,13 +287,13 @@ if __name__ == "__main__":
     ae = TAutoencoder(input_dim=6, embedding_dim=2, hidden_dims=[4, 3], activation='sigmoid')
     print(ae(dataset))
     # ae.expand_first_layer(7)
-    ae.deeper(1)
+    ae.deeper(0)
     print(ae)
-    print(ae(dataset))
+    # print(ae(dataset_2))
 
-    ae.wider(pos_layer=0, new_layer_size=7)
-    print(ae)
-    print(ae(dataset))
+    # ae.wider(pos_layer=0, new_layer_size=7)
+    # print(ae)
+    # print(ae(dataset))
     # optimizer = torch.optim.Adam(ae.parameters(), lr=1e-3, weight_decay=1e-5)
     #
     # # mean-squared error loss
