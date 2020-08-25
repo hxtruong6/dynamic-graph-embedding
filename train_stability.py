@@ -5,7 +5,7 @@ import numpy as np
 
 from src.data_preprocessing.graph_preprocessing import read_dynamic_graph
 from src.utils.config_file import read_config_file
-from src.utils.evaluate import reconstruction_accuracy, dy_reconstruction_accuracy
+from src.utils.evaluate import dy_reconstruction_accuracy
 from src.utils.model_training_utils import create_folder, dyngem_alg, node2vec_alg, sdne_alg
 from src.utils.graph_util import print_graph_stats
 from src.utils.setting_param import SettingParam

@@ -43,8 +43,7 @@ def handle_expand_model(model: TAutoencoder, input_dim, net2net_applied=False, p
                 model.deeper(pos_layer=index)
                 # model.info()
             else:
-                added_size = suitable_dim - layer_2_dim
-                model.wider(added_size=added_size, pos_layer=index)
+                model.wider(pos_layer=index, new_layer_size=suitable_dim)
                 index += 1
         else:
             index += 1
