@@ -23,6 +23,8 @@ def get_hidden_layer(prop_size, input_dim, embedding_dim):
 
 
 def handle_expand_model(model: Autoencoder, input_dim, net2net_applied=False, prop_size=0.3):
+    print("Old model size: ", model.get_layer_dims())
+
     if input_dim == model.get_input_dim():
         return model
 
@@ -32,23 +34,25 @@ def handle_expand_model(model: Autoencoder, input_dim, net2net_applied=False, pr
     if not net2net_applied:
         return model
 
-    layers_size = model.get_layers_size()
+    layers_size = model.get_layer_dims()
+    # print(layers_size)
     index = 0
     while index < len(layers_size) - 1:
-        layer_1_dim, layer_2_dim = layers_size[index]
+        layer_1_dim = layers_size[index]
+        layer_2_dim = layers_size[index + 1]
         suitable_dim = ceil(layer_1_dim * prop_size)
         if suitable_dim > layer_2_dim:
             # the prev layer before embedding layer
-            if index == len(layers_size) - 2:
+            if index + 1 == len(layers_size) - 2 and ceil(suitable_dim * prop_size) > layers_size[-1]:
                 model.deeper(pos_layer=index)
-                # model.info()
             else:
-                added_size = suitable_dim - layer_2_dim
-                model.wider(added_size=added_size, pos_layer=index)
+                model.wider(pos_layer=index, new_layer_size=suitable_dim)
                 index += 1
         else:
             index += 1
-        layers_size = model.get_layers_size()
+        layers_size = model.get_layer_dims()
+
+    print("New model size: ", model.get_layer_dims())
     return model
 
 

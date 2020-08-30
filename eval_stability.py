@@ -4,10 +4,8 @@ import networkx as nx
 
 from src.data_preprocessing.graph_preprocessing import read_dynamic_graph
 from src.utils.config_file import read_config_file
-from src.utils.data_utils import load_single_processed_data, load_dy_embeddings, load_node2vec_embeddings
+from src.utils.data_utils import load_dy_embeddings, load_node2vec_embeddings
 from src.utils.graph_util import print_graph_stats
-from src.utils.link_pred_precision_k import check_link_predictionK
-from src.utils.model_training_utils import link_pred_eva
 from src.utils.setting_param import SettingParam
 from src.utils.stable_evaluate import stability_constant
 

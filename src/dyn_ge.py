@@ -36,9 +36,13 @@ class TDynGE(object):
             raise ValueError("index is invalid!")
         return self.static_ges[index].get_embedding()
 
+    def get_all_reconstructions(self):
+        ge: TStaticGE
+        return [ge.get_reconstruction() for ge in self.static_ges]
+
     def _train_model(self, dy_ge_idx, filepath, batch_size, epochs,
                      skip_print, learning_rate, early_stop,
-                     plot_loss=False, ck_config: CheckpointConfig = None, shuffle=False):
+                     plot_loss=True, ck_config: CheckpointConfig = None, shuffle=False):
         ge: TStaticGE = self.static_ges[dy_ge_idx]
 
         start_time = time()
@@ -93,7 +97,7 @@ class TDynGE(object):
 
     def train(self, folder_path, prop_size=0.3, batch_size=64, epochs=100, skip_print=5,
               net2net_applied=False, learning_rate=1e-6, ck_config: CheckpointConfig = None,
-              early_stop=50, plot_loss=False, shuffle=False):
+              early_stop=50, plot_loss=True, shuffle=False):
         '''
 
         :param folder_path:
@@ -127,7 +131,7 @@ class TDynGE(object):
 
     def train_at(self, model_index, folder_path, prop_size=0.4, batch_size=64, epochs=100, skip_print=5,
                  net2net_applied=False, learning_rate=0.001, ck_config: CheckpointConfig = None,
-                 early_stop=50, plot_loss=False, is_load_from_previous_model=False, shuffle=False, call_in_class=False):
+                 early_stop=50, plot_loss=True, is_load_from_previous_model=False, shuffle=False, call_in_class=False):
         '''
         To training a specific model.
         :param call_in_class:
@@ -219,17 +223,18 @@ class TDynGE(object):
 
 if __name__ == "__main__":
     g1 = nx.gnm_random_graph(n=5, m=5, seed=6)
-    g2 = nx.gnm_random_graph(n=8, m=12, seed=6)
-    g3 = nx.gnm_random_graph(n=13, m=20, seed=6)
-    graphs = [g1, g2, g3]
+    g2 = nx.gnm_random_graph(n=12, m=20, seed=6)
+    g3 = nx.gnm_random_graph(n=30, m=80, seed=6)
+    g4 = nx.gnm_random_graph(n=300, m=800, seed=6)
+    graphs = [g1, g2, g3, g4]
 
     ck_config = CheckpointConfig(number_saved=10, folder_path="../models/generate_ck")
 
     # graphs, _ = read_dynamic_graph(folder_path="../data/cit_hepth", convert_to_idx=True, limit=1)
 
     dy_ge = TDynGE(graphs=graphs, embedding_dim=2)
-    dy_ge.load_models(folder_path="../models/generate")
-    dy_ge.train(prop_size=0.4, epochs=100, skip_print=20, net2net_applied=False, learning_rate=0.003,
+    # dy_ge.load_models(folder_path="../models/generate")
+    dy_ge.train(prop_size=0.3, epochs=50, skip_print=50, net2net_applied=True, learning_rate=0.003,
                 folder_path="../models/generate/", ck_config=ck_config,
                 early_stop=50, plot_loss=True)
 

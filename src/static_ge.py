@@ -13,8 +13,9 @@ from src.data_preprocessing.graph_dataset import GraphDataset
 from src.data_preprocessing.graph_preprocessing import next_datasets, get_graph_from_file, handle_graph_mini_batch
 from src.utils.autoencoder import Autoencoder
 from src.utils.checkpoint_config import CheckpointConfig
+from src.utils.evaluate import reconstruction_mse, reconstruction_accuracy
 from src.utils.graph_util import draw_graph, print_graph_stats
-from src.utils.link_pred_precision_k import check_link_predictionK, check_reconstruction
+from src.utils.precision_k_evaluate import check_link_predictionK, reconstruction_precision_k
 from src.utils.link_prediction import preprocessing_graph_for_link_prediction, run_link_pred_evaluate
 from src.utils.model_utils import save_custom_model
 from src.utils.setting_param import ModelActivation
@@ -87,14 +88,15 @@ class TStaticGE(object):
         return loss
 
     def train(self, batch_size=None, epochs=1, learning_rate=1e-6, skip_print=1, ck_config: CheckpointConfig = None,
-              early_stop=None, threshold_loss=1e-4, plot_loss=False, shuffle=False):
+              early_stop=None, threshold_loss=1e-4, plot_loss=True, shuffle=False):
         # TODO: set seed through parameter
         torch.manual_seed(6)
-        # graph_dataset = GraphDataset(A=self.A, L=self.L, batch_size=batch_size)
-        # dataloader = DataLoader(graph_dataset)
-        graph_dataset = GraphDataset(A=self.A, L=self.L)
+        graph_dataset = GraphDataset(A=self.A, L=self.L, batch_size=batch_size)
+        dataloader = DataLoader(graph_dataset)
         if batch_size is None:
             batch_size = self.input_dim
+
+        # Train whole dataset in one batch_size
         dataloader = DataLoader(graph_dataset, batch_size=batch_size, shuffle=shuffle, pin_memory=True)
 
         self.model = self.model.to(device)
@@ -104,20 +106,16 @@ class TStaticGE(object):
         count_epoch_no_improves = 0
         train_losses = []
         is_stop_train = False
+
         for epoch in range(epochs):
-            # for data in dataloader:
             t1 = time()
             epoch_loss = 0
             if is_stop_train:
                 break
             for step, batch_inp in enumerate(dataloader):
                 A, L = handle_graph_mini_batch(batch_inp)
-
-                # Trick here. TODO: check why A is (1,batch_size,number_nodes)
-                # x = Variable(A[0]).to(device)
-                # L = L[0].to(device)
                 x = Variable(A).to(device)
-                L = L.to(device)
+                L = torch.tensor(L).to(device)
                 # ===================forward=====================
                 optimizer.zero_grad()
 
@@ -134,8 +132,10 @@ class TStaticGE(object):
                 loss.backward()
                 optimizer.step()
 
-                del x, L
-                # ===================log========================
+                del A
+                del x
+                del L
+            # ===================log========================
             train_losses.append(round(float(epoch_loss), 4))
             if (epoch + 1) % skip_print == 0 or epoch == epochs - 1 or epoch == 0:
                 print(
@@ -214,50 +214,43 @@ if __name__ == "__main__":
     g_hidden_df, hidden_G = preprocessing_graph_for_link_prediction(
         G=G,
         drop_node_percent=0.2,
-        edge_rate=0.01
+        edge_rate=0.1
     )
-    for alpha in [1.4, 2, 4, 8]:
-        print("\nAlpha: ", alpha)
-        ge = TStaticGE(
-            G=hidden_G, embedding_dim=embedding_dim, hidden_dims=[8], l2=1e-5, alpha=alpha, beta=10,
-            activation=ModelActivation(hidden_layer_act='sigmoid', embedding_act='sigmoid', output_act='sigmoid')
-        )
-        start_time = time()
-        ck_point = CheckpointConfig(number_saved=2, folder_path="../data")
-        ge.train(batch_size=None, epochs=5000, skip_print=2000,
-                 learning_rate=5e-4, early_stop=200, threshold_loss=1e-4,
-                 plot_loss=True, shuffle=False, ck_config=ck_point
-                 )
 
-        # ge.train(batch_size=128, epochs=10000, skip_print=500, learning_rate=0.001, early_stop=200, threshold_loss=1e-4)
-        print(f"Finished in {round(time() - start_time, 2)}s")
-        embedding = ge.get_embedding()
-        reconstructed_graph = ge.get_reconstruction()
+    ge = TStaticGE(G=hidden_G, embedding_dim=embedding_dim, hidden_dims=[8], l2=1e-5, alpha=0.2, beta=10,
+                   activation=ModelActivation(hidden_layer_act='sigmoid', embedding_act='sigmoid',
+                                              output_act='sigmoid'))
+    start_time = time()
+    ck_point = CheckpointConfig(number_saved=2, folder_path="../data")
+    ge.train(batch_size=None, epochs=10000, skip_print=500,
+             learning_rate=1e-4, early_stop=100, threshold_loss=1e-4,
+             plot_loss=True, shuffle=True, ck_config=ck_point
+             )
 
-        # print(embedding[:3])
-        # print(nx.adjacency_matrix(G).todense()[:3])
-        # print(reconstructed_graph[:3])
+    # ge.train(batch_size=128, epochs=10000, skip_print=500, learning_rate=0.001, early_stop=200, threshold_loss=1e-4)
+    print(f"Finished in {round(time() - start_time, 2)}s")
+    embedding = ge.get_embedding()
+    reconstructed_graph = ge.get_reconstruction()
 
-        check_reconstruction(embedding=embedding, graph=G, k_query=[2, 10, 20, 100, 200])
-        link_pred_prec = check_link_predictionK(embedding, train_graph=hidden_G, origin_graph=G,
-                                                k_query=[2, 10, 20, 100, 200])
-        print("Precision@K: ", link_pred_prec)
+    print(embedding[:3])
+    print(nx.adjacency_matrix(G).todense()[:3])
+    print(reconstructed_graph[:3])
 
-        run_link_pred_evaluate(
-            graph_df=g_hidden_df,
-            embeddings=embedding,
-            num_boost_round=5000
-        )
-    # print(reconstructed_graph)
-    # classify_embeddings_evaluate(embeddings, label_file="../data/email-eu/email-Eu-core-department-labels.txt")
-    # plot_embeddings_with_labels(G, embeddings=embeddings,
-    #                             path_file="../data/email-eu/email-Eu-core-department-labels.txt",
-    #                             save_path="../images/Email-static-ge")
+    run_link_pred_evaluate(
+        graph_df=g_hidden_df,
+        embeddings=embedding,
+        num_boost_round=20000
+    )
 
-    # save_custom_model(ge.get_model(), filepath="../models/email-eu/email-eu")
+    link_pred_prec = check_link_predictionK(embedding, train_graph=hidden_G, origin_graph=G, k_query=[2, 10, 20])
+    print("Link Pred Precision@K: ", link_pred_prec)
 
-    # plot_embedding(embeddings=embeddings)
-    # plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0.6)
+    reconstruction_accuracy(reconstruction=reconstructed_graph, graph=hidden_G)
+    print("reconstruction_error: ", reconstruction_mse(reconstructed_graph, graph=hidden_G))
+    reconstruction_prec = reconstruction_precision_k(embedding=embedding, graph=hidden_G, k_query=[2, 10, 20])
+    print("Reconstruction Precision: ", reconstruction_prec)
+
+    plot_reconstruct_graph(reconstructed_graph=reconstructed_graph, pos=pos, threshold=0.5)
 
     # print("========= Node2vec ==========")
     # node2vec = Node2Vec(graph=hidden_G,
