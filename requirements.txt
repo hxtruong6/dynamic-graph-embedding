@@ -1,4 +1,4 @@
-scipy==1.4.1
+scipy==1.10.0
 pandas==0.25.1
 munkres==1.1.2
 networkx==2.3
