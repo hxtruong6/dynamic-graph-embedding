@@ -1,0 +1,89 @@
+repo_name: hxtruong6/dynamic-graph-embedding
+report_id: fc2f6b1919d5d0c06a70422eef36ab24
+repo_type: Public
+timestamp: '2023-11-14T05:14:25+00:00'
+requested_by: hxtruong6
+provider: github
+branch: master
+detected_tools_count: 7
+tools:
+- name: Python
+  description: A clear and powerful object-oriented programming language, comparable
+    to Perl, Ruby, Scheme, or Java.
+  website_url: https://www.python.org
+  open_source: true
+  hosted_saas: false
+  category: Languages & Frameworks
+  sub_category: Languages
+  image_url: https://img.stackshare.io/service/993/pUBY5pVj.png
+  detection_source: Repo Metadata
+- name: Matplotlib
+  description: A plotting library for the Python programming language
+  website_url: http://matplotlib.org
+  open_source: false
+  hosted_saas: false
+  category: Libraries
+  sub_category: Charting Libraries
+  image_url: https://img.stackshare.io/service/2993/2DZC4KaA_400x400.jpg
+  detection_source: requirements.txt
+  last_updated_by: hxtruong
+  last_updated_on: 2020-08-17 18:33:27.000000000 Z
+- name: Git
+  description: Fast, scalable, distributed revision control system
+  website_url: http://git-scm.com/
+  open_source: true
+  hosted_saas: false
+  category: Build, Test, Deploy
+  sub_category: Version Control System
+  image_url: https://img.stackshare.io/service/1046/git.png
+  detection_source: Repo Metadata
+- name: Jupyter
+  description: Multi-language interactive computing environments.
+  website_url: http://jupyter.org
+  license: BSD-3-Clause
+  open_source: true
+  hosted_saas: false
+  category: Application Utilities
+  sub_category: Data Science Notebooks
+  image_url: https://img.stackshare.io/service/4190/fGBUdNf__400x400.jpg
+  detection_source: Repo Metadata
+- name: NumPy
+  description: Fundamental package for scientific computing with Python
+  website_url: http://www.numpy.org/
+  version: 1.17.2
+  license: BSD-3-Clause
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: Data Science Tools
+  image_url: https://img.stackshare.io/service/2179/default_332f874a2edb2686f578aa6389313efcea1eec41.png
+  detection_source_url: requirements.txt
+  detection_source: requirements.txt
+  last_updated_by: hxtruong
+  last_updated_on: 2020-08-09 08:06:45.000000000 Z
+- name: SciPy
+  description: Scientific Computing Tools for Python
+  website_url: http://www.scipy.org
+  version: 1.4.1
+  license: BSD-3-Clause
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: Data Science Tools
+  image_url: https://img.stackshare.io/service/3303/scipyshiny_small.png
+  detection_source_url: requirements.txt
+  detection_source: requirements.txt
+  last_updated_by: hxtruong
+  last_updated_on: 2020-08-09 08:06:45.000000000 Z
+- name: Torch
+  description: An open-source machine learning library and a script language based
+    on the Lua programming language
+  website_url: http://torch.ch/
+  open_source: true
+  hosted_saas: false
+  category: Application Utilities
+  sub_category: Machine Learning Tools
+  image_url: https://img.stackshare.io/service/4475/hpYQzO_U_400x400.png
+  detection_source: requirements.txt
+  last_updated_by: hxtruong
+  last_updated_on: 2020-08-17 18:33:27.000000000 Z
